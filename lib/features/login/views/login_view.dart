@@ -14,6 +14,7 @@ import 'package:whms/untils/app_routes.dart';
 import 'package:whms/untils/app_text.dart';
 import 'package:whms/untils/dialog_utils.dart';
 import 'package:whms/untils/scale_utils.dart';
+import 'package:whms/widgets/gradient_text.dart';
 
 class LoginView extends StatelessWidget {
   const LoginView({super.key});
@@ -27,7 +28,7 @@ class LoginView extends StatelessWidget {
       focusNode: focusNode,
       onKeyEvent: (event) async {
         if (event is KeyDownEvent) {
-          if (event.logicalKey == LogicalKeyboardKey.enter ) {
+          if (event.logicalKey == LogicalKeyboardKey.enter) {
             if (controllerEmail.text.isEmpty ||
                 controllerPassword.text.isEmpty) {
               DialogUtils.showResultDialog(
@@ -67,7 +68,10 @@ class LoginView extends StatelessWidget {
             );
             if (isLoginSuccess) {
               if (context.mounted) {
-                ConfigsCubit.fromContext(context).user.roles <= 20
+                ConfigsCubit
+                    .fromContext(context)
+                    .user
+                    .roles <= 20
                     ? context.go(AppRoutes.managerHome)
                     : context.go(AppRoutes.home);
               }
@@ -79,18 +83,25 @@ class LoginView extends StatelessWidget {
         }
       },
       child: Container(
-        height: MediaQuery.of(context).size.height,
+        height: MediaQuery
+            .of(context)
+            .size
+            .height,
         alignment: Alignment.center,
         color: Colors.white,
         padding:
-            EdgeInsets.symmetric(horizontal: ScaleUtils.scaleSize(40, context)),
+        EdgeInsets.symmetric(horizontal: ScaleUtils.scaleSize(40, context)),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset('assets/images/logo/pls.png',
-                height: ScaleUtils.scaleSize(250, context),
-                width: ScaleUtils.scaleSize(300, context)),
-            SizedBox(height: ScaleUtils.scaleSize(50, context)),
+            // Image.asset('assets/images/logo/pls.png',
+            //     height: ScaleUtils.scaleSize(250, context),
+            //     width: ScaleUtils.scaleSize(300, context)),
+            GradientText(text: 'ĐĂNG NHẬP',
+              fontSize: 44,
+              fontWeight: FontWeight.w800,
+              gradient: ColorConfig.textGradient),
+            SizedBox(height: ScaleUtils.scaleSize(20, context)),
             EmailField(controllerEmail: controllerEmail),
             SizedBox(height: ScaleUtils.scaleSize(15, context)),
             PasswordField(controller: controllerPassword),
@@ -110,7 +121,7 @@ class LoginView extends StatelessWidget {
                   bool isLoginSuccess = false;
                   await DialogUtils.handleDialog(
                     context,
-                    () async {
+                        () async {
                       ResponseModel<UserModel> responUser = await UserServices
                           .instance
                           .login(controllerEmail.text, controllerPassword.text);
@@ -128,7 +139,7 @@ class LoginView extends StatelessWidget {
                       }
                       return responUser;
                     },
-                    () {},
+                        () {},
                     isShowDialogSuccess: false,
                     successMessage: AppText.textLoginSuccessful.text,
                     successTitle: AppText.textLoginSuccessful.text,
@@ -137,9 +148,12 @@ class LoginView extends StatelessWidget {
                   );
                   if (isLoginSuccess) {
                     if (context.mounted) {
-                      final role = ConfigsCubit.fromContext(context).user.roles;
+                      final role = ConfigsCubit
+                          .fromContext(context)
+                          .user
+                          .roles;
                       debugPrint("=====> login role: $role");
-                      if(role == -229) {
+                      if (role == -229) {
                         context.go(AppRoutes.linktink);
                         return;
                       }

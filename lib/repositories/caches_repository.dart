@@ -1,11 +1,16 @@
 import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:whms/models/working_unit_model.dart';
 
 class CachesRepository {
   CachesRepository._private();
 
   static final CachesRepository instance = CachesRepository._private();
+
+  List<WorkingUnitModel> allWorkingUnit = [];
+  Map<String, WorkingUnitModel> mapWorkingUnit = {};
+  Map<String, List<WorkingUnitModel>> mapWorkChild = {};
 //
 //   List<WorkShiftModel> allWorkShifts = [];
 //   Map<String, WorkShiftModel> mapWorkShift = {};
@@ -219,16 +224,16 @@ class CachesRepository {
 //     allProcessResult.addAll(data);
 //   }
 //
-//   // =================== WORKING UNIT ===================
-//   addWorkingUnit(WorkingUnitModel model) {
-//     if(model.enable && !allWorkingUnit.any((e) => e.id == model.id)) {
-//       allWorkingUnit.add(model);
-//       mapWorkingUnit[model.id] = model;
-//       if(model.parent.isEmpty) return;
-//       List<WorkingUnitModel> tmp = mapWorkChild[model.parent] ?? [];
-//       mapWorkChild[model.parent] = [...tmp, model];
-//     }
-//   }
+  // =================== WORKING UNIT ===================
+  addWorkingUnit(WorkingUnitModel model) {
+    if(model.enable && !allWorkingUnit.any((e) => e.id == model.id)) {
+      allWorkingUnit.add(model);
+      mapWorkingUnit[model.id] = model;
+      if(model.parent.isEmpty) return;
+      List<WorkingUnitModel> tmp = mapWorkChild[model.parent] ?? [];
+      mapWorkChild[model.parent] = [...tmp, model];
+    }
+  }
 //
 //   updateWorkingUnit(WorkingUnitModel model) {
 //     int index = allWorkingUnit.indexWhere((e) => e.id == model.id);

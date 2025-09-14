@@ -39,7 +39,7 @@ class AppBarItem extends StatelessWidget {
             ),
             child: Row(children: [
               Stack(alignment: Alignment.center, children: [
-                !(tab == curTab)
+                !(tab == curTab) && icon.isNotEmpty
                     ? Container(
                     margin: EdgeInsets.only(
                         top: ScaleUtils.scaleSize(3, context),
@@ -49,6 +49,7 @@ class AppBarItem extends StatelessWidget {
                         fit: BoxFit.cover,
                         height: ScaleUtils.scaleSize(24, context)))
                     : Container(),
+                if(icon.isNotEmpty)
                 Image.asset(icon,
                     height: ScaleUtils.scaleSize(24, context),
                     color: tab == curTab ? ColorConfig.primary1 : Colors.white,

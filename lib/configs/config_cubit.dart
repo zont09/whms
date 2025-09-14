@@ -5,7 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:whms/models/response_model.dart';
+import 'package:whms/models/scope_model.dart';
 import 'package:whms/models/user_model.dart';
+import 'package:whms/models/working_unit_model.dart';
+import 'package:whms/pref_keys.dart';
 import 'package:whms/repositories/caches_repository.dart';
 import 'package:whms/repositories/configs_repository.dart';
 import 'package:whms/services/scope_service.dart';
@@ -51,42 +54,32 @@ class ConfigsCubit extends Cubit<ConfigsState> {
   //   List<ProcessResultModel> get allProcessResult =>
   //       _cachesRepository.allProcessResult;
   //
-  //   // ==================> WORKING UNIT <==================
-  //   List<WorkingUnitModel> get allWorkingUnit => _cachesRepository.allWorkingUnit;
-  //
-  //   Map<String, WorkingUnitModel> get mapWorkingUnit =>
-  //       _cachesRepository.mapWorkingUnit;
-  //
-  //   Map<String, List<WorkingUnitModel>> get mapWorkChild =>
-  //       _cachesRepository.mapWorkChild;
-  //
-  //   // ==================> WORK SHIFT <==================
-  //   List<WorkShiftModel> get allWorkShifts => _cachesRepository.allWorkShifts;
-  //
-  //   Map<String, WorkShiftModel> get mapWorkShift =>
-  //       _cachesRepository.mapWorkShift;
-  //
-  //   Map<String, WorkShiftModel> get mapWorkShiftFromUserAndDate =>
-  //       _cachesRepository.mapWorkShiftFromUserAndDate;
-  //
-  //   // ==================> WORK FIELD <==================
-  //   List<WorkFieldModel> get allWorkFields => _cachesRepository.allWorkFields;
-  //
-  //   Map<String, WorkFieldModel> get mapWorkField =>
-  //       _cachesRepository.mapWorkField;
-  //
-  //   Map<String, List<WorkFieldModel>> get mapWFfWS => _cachesRepository.mapWFfWS;
-  //
-  //   // ==================> QUOTE <==================
-  //   List<QuoteModel> get allQuotes => _cachesRepository.allQuotes;
-  //
-  //   Map<String, QuoteModel> get mapQuote => _cachesRepository.mapQuote;
-  //
-  //   List<String> listUserQuote = [];
-  //   final String keyUserQuote = 'list_user_quote';
-  //   final String keyQuoteCloseToday = 'close_quote_today';
-  //   final String keyQuoteAutoNext = 'quote_auto_next';
-  //
+    // ==================> WORKING UNIT <==================
+    List<WorkingUnitModel> get allWorkingUnit => _cachesRepository.allWorkingUnit;
+
+    Map<String, WorkingUnitModel> get mapWorkingUnit =>
+        _cachesRepository.mapWorkingUnit;
+
+    Map<String, List<WorkingUnitModel>> get mapWorkChild =>
+        _cachesRepository.mapWorkChild;
+
+    // // ==================> WORK SHIFT <==================
+    // List<WorkShiftModel> get allWorkShifts => _cachesRepository.allWorkShifts;
+    //
+    // Map<String, WorkShiftModel> get mapWorkShift =>
+    //     _cachesRepository.mapWorkShift;
+    //
+    // Map<String, WorkShiftModel> get mapWorkShiftFromUserAndDate =>
+    //     _cachesRepository.mapWorkShiftFromUserAndDate;
+    //
+    // // ==================> WORK FIELD <==================
+    // List<WorkFieldModel> get allWorkFields => _cachesRepository.allWorkFields;
+    //
+    // Map<String, WorkFieldModel> get mapWorkField =>
+    //     _cachesRepository.mapWorkField;
+    //
+    // Map<String, List<WorkFieldModel>> get mapWFfWS => _cachesRepository.mapWFfWS;
+
   bool doneInitData = false;
 
   //
@@ -108,15 +101,14 @@ class ConfigsCubit extends Cubit<ConfigsState> {
   late Map<String, UserModel> usersMap = {};
 
   //   late Map<String, OkrsGroupModel> okrsGroupsMap = {};
-  //   late Map<String, ScopeModel> allScopeByUserId = {};
-  //   late Map<String, ScopeModel> allScopeMap = {};
+    late Map<String, ScopeModel> allScopeByUserId = {};
+    late Map<String, ScopeModel> allScopeMap = {};
   late List<UserModel> allUsers = [];
 
-  //   late List<ScopeModel> allScopes = [];
-  //   List<StaffEvaluationModel> listStaffEvaluations = [];
-  //   Map<String, StaffEvaluationPointModel> mapStaffEP = {};
+    late List<ScopeModel> allScopes = [];
+
   //   static String version = '';
-  //   static String localScopeId = '';
+    static String localScopeId = '';
   //   bool isNewVersion = false;
   //
   //   int loadingEvaluation = 0;
@@ -198,9 +190,9 @@ class ConfigsCubit extends Cubit<ConfigsState> {
     //     listUserQuote = [...dataUserQuote];
     await loadAllUsers();
     //     await loadAllOkrsGroups();
-    //     await loadAllScopeByUserId();
-    //     await loadAllScopes();
-    //     await getLocalScope();
+        await loadAllScopeByUserId();
+        await loadAllScopes();
+        await getLocalScope();
     //     await _cachesRepository.loadChecklistTemplates(prefs);
     //     await _cachesRepository.loadChecklistItems(prefs);
     //     // await _cachesRepository.loadProcess(prefs);
@@ -276,22 +268,22 @@ class ConfigsCubit extends Cubit<ConfigsState> {
   //       okrsGroupsMap = {for (var okr in okrs) okr.id: okr};
   //     }
   //   }
-  //
-  //   loadAllScopeByUserId() async {
-  //     var scopes = await _scopeService.getScopeByIdUser(user.id);
-  //     allScopeByUserId = {for (var scope in scopes) scope.id: scope};
-  //   }
-  //
-  //   loadAllScopes() async {
-  //     var scopes =
-  //         await _scopeService.getListScope() as ResponseModel<List<ScopeModel>>;
-  //     if (scopes.status == ResponseStatus.ok && scopes.results != null) {
-  //       allScopes = [...scopes.results!];
-  //       allScopeMap = {
-  //         for (var scope in scopes.results!.toList()) scope.id: scope
-  //       };
-  //     }
-  //   }
+
+    loadAllScopeByUserId() async {
+      var scopes = await _scopeService.getScopeByIdUser(user.id);
+      allScopeByUserId = {for (var scope in scopes) scope.id: scope};
+    }
+
+    loadAllScopes() async {
+      var scopes =
+          await _scopeService.getListScope() as ResponseModel<List<ScopeModel>>;
+      if (scopes.status == ResponseStatus.ok && scopes.results != null) {
+        allScopes = [...scopes.results!];
+        allScopeMap = {
+          for (var scope in scopes.results!.toList()) scope.id: scope
+        };
+      }
+    }
   //
   //   getConfiguration() async {
   //     var tmp = await _configsService.getConfiguration();
@@ -311,10 +303,10 @@ class ConfigsCubit extends Cubit<ConfigsState> {
   //     }
   //   }
   //
-  //   getLocalScope() async {
-  //     var tmp = await PrefKeys.getLocalScopeId();
-  //     ConfigsCubit.localScopeId = tmp ?? '';
-  //   }
+    getLocalScope() async {
+      var tmp = await PrefKeys.getLocalScopeId();
+      ConfigsCubit.localScopeId = tmp ?? '';
+    }
   //
   //   reloadVersion() {
   //     html.window.location.reload();

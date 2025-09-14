@@ -71,7 +71,7 @@ class ListUserView extends StatelessWidget {
                   children: [
                     CustomButton(
                         title: AppText.btnAddStaff.text,
-                        icon: 'assets/images/icons/ic_add_meeting.png',
+                        icon: 'assets/images/icons/ic_add.png',
                         colorBackground: Colors.white,
                         colorBorder: Colors.white,
                         colorTitle: ColorConfig.primary2,

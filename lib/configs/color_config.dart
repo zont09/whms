@@ -61,15 +61,15 @@ class ColorConfig {
   static const Color primary6 = Color(0xFFE7EDFF);
   static const Color primary7 = Color(0xFFE6EFF5);
 
-  static const LinearGradient gradientPrimary1 = LinearGradient(
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
+  static const LinearGradient textGradient = LinearGradient(
+    begin: Alignment.bottomCenter,
+    end: Alignment.topCenter,
     colors: [
-      Color(0xFFE41E26),
-      Color(0xFFC41D1F),
-      Color(0xFFB71C1C),
+      Color(0xFF0448db),
+      Color(0xFF006df5),
+      Color(0xFF0086f3),
     ],
-    stops: [0.0, 0.7094, 1.0],
+    stops: [0.0, 0.2607, 0.5606],
   );
   static const LinearGradient gradientPrimary2 = LinearGradient(
     colors: [

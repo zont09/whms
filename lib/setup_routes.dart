@@ -5,6 +5,7 @@ import 'package:whms/configs/config_cubit.dart';
 import 'package:whms/features/login/screens/change_password_screen.dart';
 import 'package:whms/features/login/screens/login_screens.dart';
 import 'package:whms/features/manager/screens/manager_home_screens.dart';
+import 'package:whms/features/manager/screens/profile_screens.dart';
 import 'package:whms/features/page_not_found/page_not_found_screen.dart';
 import 'package:whms/untils/app_routes.dart';
 import 'package:whms/widgets/page_check.dart';
@@ -45,21 +46,21 @@ class SetupGoRouter {
               transitionsBuilder: fadeTransitionBuilder);
         },
       ),
-      // GoRoute(
-      //   path: AppRoutes.managerScope,
-      //   pageBuilder: (context, state) {
-      //     final role = BlocProvider.of<ConfigsCubit>(context).role;
-      //
-      //     return CustomTransitionPage(
-      //         child: PageCheck(
-      //           url: AppRoutes.managerScope,
-      //           screen: 0 <= role && role < 30
-      //               ? const ManagerHomeScreen(tab: AppRoutes.managerScope)
-      //               : const PageNotFoundScreen(),
-      //         ),
-      //         transitionsBuilder: fadeTransitionBuilder);
-      //   },
-      // ),
+      GoRoute(
+        path: AppRoutes.managerScope,
+        pageBuilder: (context, state) {
+          final role = BlocProvider.of<ConfigsCubit>(context).role;
+
+          return CustomTransitionPage(
+              child: PageCheck(
+                url: AppRoutes.managerScope,
+                screen: 0 <= role && role < 30
+                    ? const ManagerHomeScreen(tab: AppRoutes.managerScope)
+                    : const PageNotFoundScreen(),
+              ),
+              transitionsBuilder: fadeTransitionBuilder);
+        },
+      ),
       // GoRoute(
       //   path: AppRoutes.managerProcedure,
       //   pageBuilder: (context, state) {
@@ -75,20 +76,20 @@ class SetupGoRouter {
       //         transitionsBuilder: fadeTransitionBuilder);
       //   },
       // ),
-      // GoRoute(
-      //   path: AppRoutes.profileId,
-      //   pageBuilder: (context, state) {
-      //     final id = state.pathParameters['id'];
-      //     return CustomTransitionPage(
-      //         child: PageCheck(
-      //           url: AppRoutes.profileId,
-      //           screen: ProfileScreen(
-      //             idUser: id!,
-      //           ),
-      //         ),
-      //         transitionsBuilder: fadeTransitionBuilder);
-      //   },
-      // ),
+      GoRoute(
+        path: AppRoutes.profileId,
+        pageBuilder: (context, state) {
+          final id = state.pathParameters['id'];
+          return CustomTransitionPage(
+              child: PageCheck(
+                url: AppRoutes.profileId,
+                screen: ProfileScreen(
+                  idUser: id!,
+                ),
+              ),
+              transitionsBuilder: fadeTransitionBuilder);
+        },
+      ),
       GoRoute(
         path: AppRoutes.changePassword,
         pageBuilder: (context, state) {

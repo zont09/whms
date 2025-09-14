@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:whms/configs/color_config.dart';
 import 'package:whms/untils/app_routes.dart';
 import 'package:whms/untils/app_text.dart';
 import 'package:whms/untils/scale_utils.dart';
@@ -23,11 +24,12 @@ class AppbarManager extends StatelessWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: false,
       flexibleSpace: Container(
         decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/images/background_manager.png'),
-            // Ảnh từ assets
-            fit: BoxFit.cover, // Phủ kín AppBar
-          ),
+          color: ColorConfig.primary3
+          // image: DecorationImage(
+          //   image: AssetImage('assets/images/background_manager.png'),
+          //   // Ảnh từ assets
+          //   fit: BoxFit.cover, // Phủ kín AppBar
+          // ),
         ),
       ),
       // flexibleSpace: Container(
@@ -40,7 +42,7 @@ class AppbarManager extends StatelessWidget implements PreferredSizeWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Image.asset('assets/images/logo/pls_white.png',
+            Image.asset('assets/images/logo/logo_white.png',
                 height: ScaleUtils.scaleSize(45, context)),
             const Spacer(),
             Padding(
@@ -50,7 +52,7 @@ class AppbarManager extends StatelessWidget implements PreferredSizeWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   AppBarItem(
-                    icon: 'assets/images/icons/ic_tab_staffs.png',
+                    icon: '',
                     title: AppText.txtListStaff.text,
                     tab: 1,
                     curTab: tab,
@@ -60,7 +62,7 @@ class AppbarManager extends StatelessWidget implements PreferredSizeWidget {
                   ),
                   SizedBox(width: ScaleUtils.scaleSize(24, context)),
                   AppBarItem(
-                    icon: 'assets/images/icons/ic_tab_scopes.png',
+                    icon: '',
                     title: AppText.txtListScope.text,
                     tab: 2,
                     curTab: tab,

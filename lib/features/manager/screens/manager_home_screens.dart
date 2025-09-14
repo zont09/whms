@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:whms/features/manager/views/scope_tab.dart';
 import 'package:whms/features/manager/views/user_tab.dart';
 import 'package:whms/features/manager/widgets/appbar_manager.dart';
 import 'package:whms/untils/app_routes.dart';
@@ -15,7 +16,7 @@ class ManagerHomeScreen extends StatelessWidget {
     int curTab = 0;
     switch (tab) {
       case AppRoutes.managerPersonnel: view = const UserTab(); curTab = 1; break;
-      case AppRoutes.managerScope: view = Placeholder(); curTab = 2; break;
+      case AppRoutes.managerScope: view =  ScopeTab(); curTab = 2; break;
     }
     return Scaffold(
         appBar: AppbarManager(

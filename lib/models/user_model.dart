@@ -66,7 +66,7 @@ class UserModel {
         roles: json['roles'] != null ? int.parse(json['roles'].toString()) : -1,
         location: json['location'] ?? "",
         name: json['name'] ?? "",
-        gender: json['gender'] ?? "",
+        gender: json['gender'] ?? "Nam",
         phone: json['phone'] ?? "",
         birthday:
             json['birthday'] != null ? DateTime.parse(json['birthday']) : null,
