@@ -64,7 +64,7 @@ class ScopeTab extends StatelessWidget {
                 ),
 
                 SizedBox(height: ScaleUtils.scaleSize(20, context)),
-                CustomButton(
+                ZButton(
                     title: AppText.btnAddScope.text,
                     icon: 'assets/images/icons/ic_add_meeting.png',
                     colorBackground: Colors.white,

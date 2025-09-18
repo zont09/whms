@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:whms/models/response_model.dart';
 import 'package:whms/models/user_model.dart';
+import 'package:whms/models/work_shift_model.dart';
 import 'package:whms/repositories/user_repository.dart';
 
 class UserServices {
@@ -107,4 +108,38 @@ class UserServices {
   //       .toList();
   //   return result;
   // }
+
+  Future<WorkShiftModel?> getWorkShiftByIdUserAndDate(
+      String id, DateTime date) async {
+    final result =
+        (await UserRepository.instance.getWorkShiftByIdUserAndDate(id, date))
+            .docs
+            .map((e) => WorkShiftModel.fromSnapshot(e))
+            .firstOrNull;
+    return result;
+  }
+
+
+  // Future<WorkShiftModel?> getWorkShiftById(String id) async {
+  //   final result = (await UserRepository.instance.getWorkShiftById(id))
+  //       .docs
+  //       .map((e) => WorkShiftModel.fromSnapshot(e))
+  //       .firstOrNull;
+  //   return result;
+  // }
+
+  Future<void> addNewWorkShift(WorkShiftModel model) async {
+    await UserRepository.instance.createWorkShift(model);
+    debugPrint("=========> Add new work shift: ${model.id} ${model.user}");
+  }
+
+  // Future<void> updateWorkShift(WorkShiftModel model) async {
+  //   await UserRepository.instance.updateWorkShift(model);
+  //   debugPrint("=========> Update work shift: ${model.id} ${model.user}");
+  // }
+
+  Future<void> updateWorkShiftField(WorkShiftModel model, WorkShiftModel oldModel) async {
+    await UserRepository.instance.updateWorkShiftField(model, oldModel);
+    debugPrint("=========> Update work shift: ${model.id} ${model.user}");
+  }
 }

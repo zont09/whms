@@ -33,7 +33,7 @@ class ButtonAction extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           if (currentUser.id == user?.id)
-            CustomButton(
+            ZButton(
                 title: AppText.btnLogout.text,
                 icon: "",
                 paddingHor: 18,
@@ -58,7 +58,7 @@ class ButtonAction extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              CustomButton(
+              ZButton(
                 title: AppText.btnResetPassword.text,
                 icon: "",
                 colorBackground: Colors.white,
@@ -100,7 +100,7 @@ class ButtonAction extends StatelessWidget {
               SizedBox(
                 width: ScaleUtils.scaleSize(25, context),
               ),
-              CustomButton(
+              ZButton(
                 title: AppText.btnEditInformation.text,
                 icon: "",
                 colorBackground: Colors.white,
@@ -116,7 +116,7 @@ class ButtonAction extends StatelessWidget {
                   width: ScaleUtils.scaleSize(25, context),
                 ),
               if (currentUser.roles <= 20)
-                CustomButton(
+                ZButton(
                   title: AppText.btnDeleteAccount.text,
                   icon: "",
                   onPressed: () async {

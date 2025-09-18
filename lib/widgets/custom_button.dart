@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:whms/configs/color_config.dart';
 import 'package:whms/untils/scale_utils.dart';
 
-class CustomButton extends StatelessWidget {
-  const CustomButton(
+class ZButton extends StatelessWidget {
+  const ZButton(
       {super.key,
       required this.title,
       this.icon,

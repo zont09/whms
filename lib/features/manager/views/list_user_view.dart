@@ -69,7 +69,7 @@ class ListUserView extends StatelessWidget {
                 SizedBox(height: ScaleUtils.scaleSize(15, context)),
                 Row(
                   children: [
-                    CustomButton(
+                    ZButton(
                         title: AppText.btnAddStaff.text,
                         icon: 'assets/images/icons/ic_add.png',
                         colorBackground: Colors.white,

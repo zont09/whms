@@ -3,8 +3,10 @@ import 'dart:ui_web';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:whms/configs/color_config.dart';
+import 'package:whms/features/home/checkin/views/confirm_checkout_view.dart';
 import 'package:whms/models/response_model.dart';
 import 'package:whms/untils/app_text.dart';
+import 'package:whms/untils/date_time_utils.dart';
 import 'dart:html' as html;
 
 import 'package:whms/untils/scale_utils.dart';
@@ -72,7 +74,7 @@ class DialogUtils {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          CustomButton(
+                          ZButton(
                               title: AppText.btnOk.text.toUpperCase(),
                               colorBackground: ColorConfig.error,
                               colorBorder: ColorConfig.error,
@@ -90,6 +92,35 @@ class DialogUtils {
                 )));
       },
     );
+  }
+
+  static Future<bool> showConfirmCheckoutDialog(
+      BuildContext context,
+      String title,
+      int wp,
+      int wt,
+      int lt,
+      String message, {
+        Color mainColor = ColorConfig.primary2,
+        Color confirmColor = ColorConfig.error,
+        Color cancelColor = ColorConfig.primary3,
+      }) {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+        contentPadding: EdgeInsets.all(ScaleUtils.scaleSize(25, context)),
+        content: ConfirmCheckoutView(
+          logTime: DateTimeUtils.formatDuration(lt),
+          workingPoint: "$wp điểm",
+          timeDoingTask: DateTimeUtils.formatDuration(wt),
+        ),
+      ),
+    ).then((value) => value ?? false);
   }
 
   static showAlertDialog(BuildContext context,
@@ -250,7 +281,7 @@ class DialogUtils {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              CustomButton(
+              ZButton(
                 title: AppText.btnOk.text,
                 colorBackground: mainColor,
                 // Dùng màu chính
@@ -319,7 +350,7 @@ class DialogUtils {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              CustomButton(
+              ZButton(
                 title: AppText.btnCancel.text,
                 colorBackground: Colors.white,
                 colorTitle: cancelColor,
@@ -333,7 +364,7 @@ class DialogUtils {
                 },
               ),
               SizedBox(width: ScaleUtils.scaleSize(20, context)),
-              CustomButton(
+              ZButton(
                 title: AppText.btnConfirm.text,
                 colorBackground: confirmColor,
                 colorBorder: confirmColor,

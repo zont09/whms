@@ -121,7 +121,7 @@ class ChangeAvatarPopup extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    CustomButton(
+                    ZButton(
                         title: AppText.btnCancel.text,
                         paddingVer: 4,
                         paddingHor: 12,
@@ -134,7 +134,7 @@ class ChangeAvatarPopup extends StatelessWidget {
                           Navigator.of(context).pop();
                         }),
                     const ZSpace(w: 12),
-                    CustomButton(
+                    ZButton(
                         title: AppText.btnConfirm.text,
                         paddingVer: 4,
                         paddingHor: 12,

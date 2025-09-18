@@ -325,7 +325,7 @@ class FileUtils {
                 alignment: Alignment.centerRight,
                 child: Padding(
                   padding: EdgeInsets.all(ScaleUtils.scaleSize(12, context)),
-                  child: CustomButton(
+                  child: ZButton(
                       title: AppText.btnClose.text,
                       icon: "",
                       paddingVer: 6,

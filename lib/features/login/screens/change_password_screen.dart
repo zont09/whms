@@ -71,7 +71,7 @@ class ChangePasswordScreen extends StatelessWidget {
                     isObscure: true,
                   ),
                   SizedBox(height: ScaleUtils.scaleSize(30, context)),
-                  CustomButton(
+                  ZButton(
                     paddingHor: 25,
                       title: AppText.btnChangPassword.text,
                       icon: "",

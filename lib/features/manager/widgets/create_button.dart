@@ -66,7 +66,7 @@ class CreateButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = ConfigsCubit.fromContext(context).user;
-    return CustomButton(
+    return ZButton(
       title: title,
       icon: "",
       onPressed: () async {
