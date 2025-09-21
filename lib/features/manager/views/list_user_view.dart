@@ -52,8 +52,8 @@ class ListUserView extends StatelessWidget {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Color(0xFFBF0000),
-                        Color(0xFF590000),
+                        ColorConfig.primary3,
+                        ColorConfig.primary1,
                       ],
                       stops: [0.2237, 1.6053],
                     ).createShader(bounds);

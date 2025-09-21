@@ -33,20 +33,20 @@ class UserRepository {
 
   Future<QuerySnapshot<Map<String, dynamic>>> getAllUser() async {
     final snapshot = await db
-        .collection("daily_pls_user")
+        .collection("users")
         .where("enable", isEqualTo: true)
         .get();
     return snapshot;
   }
 
   Future<QuerySnapshot<Map<String, dynamic>>> getAllUserIgnoreEnable() async {
-    final snapshot = await db.collection("daily_pls_user").get();
+    final snapshot = await db.collection("users").get();
     return snapshot;
   }
 
   Future<QuerySnapshot<Map<String, dynamic>>> getUserById(String id) async {
     final snapshot = await db
-        .collection("daily_pls_user")
+        .collection("users")
         .where("id", isEqualTo: id)
         .where("enable", isEqualTo: true)
         .get();
@@ -56,7 +56,7 @@ class UserRepository {
   Future<ResponseModel<List<UserModel>>> getUserByScopeId(String idScp) async {
     try {
       final snapshot = await db
-          .collection("daily_pls_user")
+          .collection("users")
           .where("scopes", arrayContains: idScp)
           .where('enable', isEqualTo: true)
           .get();
@@ -74,7 +74,7 @@ class UserRepository {
 
   Future<QuerySnapshot<Map<String, dynamic>>> getUserByEmail(String id) async {
     final snapshot = await db
-        .collection("daily_pls_user")
+        .collection("users")
         .where("email", isEqualTo: id)
         .where("enable", isEqualTo: true)
         .get();
@@ -83,15 +83,15 @@ class UserRepository {
 
   Future<void> createUser(UserModel user) async {
     await db
-        .collection('daily_pls_user')
-        .doc("daily_pls_user_${user.id}")
+        .collection('users')
+        .doc("users_${user.id}")
         .set(user.toJson());
   }
 
   Future<void> updateUser(UserModel user) async {
     await db
-        .collection('daily_pls_user')
-        .doc("daily_pls_user_${user.id}")
+        .collection('users')
+        .doc("users_${user.id}")
         .update(user.toJson());
   }
 
@@ -104,6 +104,7 @@ class UserRepository {
         password: password,
       );
       final user = await UserServices.instance.getUserByEmail(email);
+      debugPrint("[THINK] ====> check user: ${user?.name} - $email");
       if (user == null || !user.enable) {
         await FirebaseAuth.instance.signOut();
         return ResponseModel(
@@ -153,7 +154,7 @@ class UserRepository {
       int roleId) async {
     try {
       final snapshot = await db
-          .collection("daily_pls_user")
+          .collection("users")
       // .where('roles', isGreaterThan: roleId)
           .where("enable", isEqualTo: true)
           .get();
@@ -329,7 +330,7 @@ class UserRepository {
 
   // Future<QuerySnapshot<Map<String, dynamic>>> getAllUserIgnoreEnable() async {
   //   final snapshot =
-  //   await db.collection("daily_pls_user").get();
+  //   await db.collection("users").get();
   //   return snapshot;
   // }
 

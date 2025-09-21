@@ -84,7 +84,7 @@ class ChangeAvatarPopup extends StatelessWidget {
                                           width: ScaleUtils.scaleSize(300, context),
                                         )
                                       : Image.asset(
-                                          "assets/images/demo/demo_avatar.png",
+                                          "assets/images/default_avatar.png",
                                           height: ScaleUtils.scaleSize(300, context),
                                           width: ScaleUtils.scaleSize(300, context),
                                           // fit: BoxFit.fill,

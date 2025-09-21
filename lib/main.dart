@@ -91,7 +91,7 @@ class MyApp extends StatelessWidget {
                       PointerDeviceKind.trackpad,
                       PointerDeviceKind.mouse
                     }),
-                title: 'Daily PLS',
+                title: 'WHMS',
                 theme: ThemeData(
                   colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
                   useMaterial3: true,

@@ -48,8 +48,8 @@ class ScopeTab extends StatelessWidget {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Color(0xFFBF0000),
-                        Color(0xFF590000),
+                        ColorConfig.primary3,
+                        ColorConfig.primary1,
                       ],
                       stops: [0.2237, 1.6053],
                     ).createShader(bounds);
@@ -67,6 +67,7 @@ class ScopeTab extends StatelessWidget {
                 ZButton(
                     title: AppText.btnAddScope.text,
                     icon: 'assets/images/icons/ic_add_meeting.png',
+                    colorIcon: ColorConfig.primary1,
                     colorBackground: Colors.white,
                     colorBorder: Colors.white,
                     colorTitle: ColorConfig.primary2,

@@ -52,7 +52,7 @@ class DropdownCustom extends StatelessWidget {
         Row(
           children: [
             Image.asset('assets/images/icons/profile_icon/ic_$icon.png',
-                height: ScaleUtils.scaleSize(24, context)),
+                height: ScaleUtils.scaleSize(24, context), color: ColorConfig.primary1),
             const ZSpace(w: 4),
             Text(
               title,

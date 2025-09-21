@@ -45,7 +45,7 @@ class AvatarItem extends StatelessWidget {
                   }
                 },
                 errorBuilder: (_, __, ___) => Image.asset(
-                    'assets/images/demo/demo_avatar.png',
+                    'assets/images/default_avatar.png',
                     color: Colors.grey.shade400,
                     width: ScaleUtils.scaleSize(size, context),
                     height: ScaleUtils.scaleSize(size, context))),

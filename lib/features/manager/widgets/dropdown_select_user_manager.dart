@@ -37,8 +37,10 @@ class DropdownSelectUserManager extends StatelessWidget {
       children: [
         Row(
           children: [
-            Image.asset('assets/images/icons/profile_icon/ic_${title == AppText.titleOwner.text ? "handler" : "leader"}.png',
-                height: ScaleUtils.scaleSize(24, context)),
+            Image.asset(
+              'assets/images/icons/profile_icon/ic_${title == AppText.titleOwner.text ? "handler" : "leader"}.png',
+              height: ScaleUtils.scaleSize(24, context), color: ColorConfig.primary1
+            ),
             const ZSpace(w: 4),
             Text(
               title,
@@ -50,13 +52,9 @@ class DropdownSelectUserManager extends StatelessWidget {
             ),
           ],
         ),
-        SizedBox(
-          height: ScaleUtils.scaleSize(5, context),
-        ),
+        SizedBox(height: ScaleUtils.scaleSize(5, context)),
         Theme(
-          data: Theme.of(context).copyWith(
-            canvasColor: Colors.white,
-          ),
+          data: Theme.of(context).copyWith(canvasColor: Colors.white),
           child: AbsorbPointer(
             absorbing: !isEdit,
             child: Container(
@@ -97,13 +95,14 @@ class DropdownSelectUserManager extends StatelessWidget {
                 ),
                 child: DropdownSearchUserForManager(
                   maxHeight: 40,
-                    onChanged: (v) {
-                      if(onChanged != null) {
-                        onChanged!(v);
-                      }
-                    },
-                    initItem: defaultValue ?? UserModel(),
-                    options: options),
+                  onChanged: (v) {
+                    if (onChanged != null) {
+                      onChanged!(v);
+                    }
+                  },
+                  initItem: defaultValue ?? UserModel(),
+                  options: options,
+                ),
               ),
             ),
           ),
