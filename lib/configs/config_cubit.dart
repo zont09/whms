@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:html' as html;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -709,14 +708,14 @@ class ConfigsCubit extends Cubit<ConfigsState> {
   //
   //   // =================== SAVE TAB STATE ===================
   //
-  //   getSaveTab(String tabKey) {
-  //     final tab = _sharedPreferences.getString(tabKey);
-  //     return tab;
-  //   }
-  //
-  //   saveSaveTab(String tabKey, String url) {
-  //     _sharedPreferences.setString(tabKey, url);
-  //   }
+    getSaveTab(String tabKey) {
+      final tab = _sharedPreferences.getString(tabKey);
+      return tab;
+    }
+
+    saveSaveTab(String tabKey, String url) {
+      _sharedPreferences.setString(tabKey, url);
+    }
   //
   //   // =================== QUOTE ===================
   //

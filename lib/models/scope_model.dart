@@ -119,7 +119,7 @@ class ScopeModel {
   factory ScopeModel.initial({bool isOkrs = false, String okrsGroup = ''}) {
     final db = FirebaseFirestore.instance;
 
-    var newDoc = db.collection('daily_pls_scope').doc();
+    var newDoc = db.collection('whms_pls_scope').doc();
     return ScopeModel(
         id: newDoc.id,
         title: '',

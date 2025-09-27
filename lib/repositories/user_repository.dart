@@ -324,7 +324,7 @@ class UserRepository {
   }
 
   Future<QuerySnapshot<Map<String, dynamic>>> getAllWorkShift() async {
-    final snapshot = await db.collection("daily_pls_work_shift").get();
+    final snapshot = await db.collection("whms_pls_work_shift").get();
     return snapshot;
   }
 
@@ -337,7 +337,7 @@ class UserRepository {
   Future<QuerySnapshot<Map<String, dynamic>>> getWorkShiftByIdUserAndDate(
       String id, DateTime date) async {
     final snapshot = await db
-        .collection("daily_pls_work_shift")
+        .collection("whms_pls_work_shift")
         .where("user", isEqualTo: id)
         .where("date", isEqualTo: date.toIso8601String())
         .get();
@@ -348,7 +348,7 @@ class UserRepository {
   Future<QuerySnapshot<Map<String, dynamic>>> getWorkShiftById(
       String id) async {
     final snapshot = await db
-        .collection("daily_pls_work_shift")
+        .collection("whms_pls_work_shift")
         .where("id", isEqualTo: id)
         .get();
     return snapshot;
@@ -356,8 +356,8 @@ class UserRepository {
 
   Future<void> createWorkShift(WorkShiftModel work) async {
     await db
-        .collection('daily_pls_work_shift')
-        .doc("daily_pls_work_shift_${work.id}")
+        .collection('whms_pls_work_shift')
+        .doc("whms_pls_work_shift_${work.id}")
         .set(work.toJson());
   }
 
@@ -373,8 +373,8 @@ class UserRepository {
       updatedMap[k] = v;
     });
     await db
-        .collection('daily_pls_work_shift')
-        .doc("daily_pls_work_shift_${model.id}")
+        .collection('whms_pls_work_shift')
+        .doc("whms_pls_work_shift_${model.id}")
         .update({
       ...updatedMap,
     });

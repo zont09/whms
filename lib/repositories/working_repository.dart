@@ -29,7 +29,7 @@ class WorkingRepository {
 
   Future<QuerySnapshot<Map<String, dynamic>>> getAllWorkingUnit() async {
     final snapshot = await db
-        .collection("daily_pls_working_unit")
+        .collection("whms_pls_working_unit")
         .where("enable", isEqualTo: true)
         .where("closed", isEqualTo: false)
         .get();
@@ -38,14 +38,14 @@ class WorkingRepository {
 
   Future<QuerySnapshot<Map<String, dynamic>>>
       getAllWorkingUnitIgnoreEnable() async {
-    final snapshot = await db.collection("daily_pls_working_unit").get();
+    final snapshot = await db.collection("whms_pls_working_unit").get();
     return snapshot;
   }
 
   Future<QuerySnapshot<Map<String, dynamic>>>
       getAllWorkingUnitIgnoreClosed() async {
     final snapshot = await db
-        .collection("daily_pls_working_unit")
+        .collection("whms_pls_working_unit")
         .where("enable", isEqualTo: true)
         .get();
     return snapshot;
@@ -54,7 +54,7 @@ class WorkingRepository {
   Future<QuerySnapshot<Map<String, dynamic>>> getAllTaskInScopeIgnoreClosed(
       String scp) async {
     final snapshot = await db
-        .collection("daily_pls_working_unit")
+        .collection("whms_pls_working_unit")
         .where("type", isEqualTo: TypeAssignmentDefine.task.title)
         .where("scope", arrayContains: scp)
         .where("enable", isEqualTo: true)
@@ -66,7 +66,7 @@ class WorkingRepository {
   getAllWorkingUnitInScopeByTypeIgnoreClosedUpdated(DateTime date, String scp, String type) async {
     try {
       var query1 = await db
-          .collection("daily_pls_working_unit")
+          .collection("whms_pls_working_unit")
           .where("type", isEqualTo: type)
           .where("scope", arrayContains: scp)
           .where("enable", isEqualTo: true)
@@ -74,7 +74,7 @@ class WorkingRepository {
           .get();
 
       var query2 = await db
-          .collection("daily_pls_working_unit")
+          .collection("whms_pls_working_unit")
           .where("type", isEqualTo: type)
           .where("scope", arrayContains: scp)
           .where("enable", isEqualTo: true)
@@ -107,7 +107,7 @@ class WorkingRepository {
   Future<QuerySnapshot<Map<String, dynamic>>> getAllEpicInScopeIgnoreClosed(
       String scp) async {
     final snapshot = await db
-        .collection("daily_pls_working_unit")
+        .collection("whms_pls_working_unit")
         .where("type", isEqualTo: TypeAssignmentDefine.epic.title)
         .where("scope", arrayContains: scp)
         .where("enable", isEqualTo: true)
@@ -118,7 +118,7 @@ class WorkingRepository {
   Future<QuerySnapshot<Map<String, dynamic>>> getAllTaskFollowing(
       String id) async {
     final snapshot = await db
-        .collection("daily_pls_working_unit")
+        .collection("whms_pls_working_unit")
         .where("followers", arrayContains: id)
         .where("closed", isEqualTo: false)
         .where("enable", isEqualTo: true)
@@ -129,7 +129,7 @@ class WorkingRepository {
   // Future<QuerySnapshot<Map<String, dynamic>>> getWorkingUnitAfterDate(
   //     DateTime date) async {
   //   final snapshot = await db
-  //       .collection("daily_pls_working_unit")
+  //       .collection("whms_pls_working_unit")
   //       .where("createAt", isGreaterThan: date)
   //       .where("closed", isEqualTo: false)
   //       .where("enable", isEqualTo: true)
@@ -140,7 +140,7 @@ class WorkingRepository {
   Future<QuerySnapshot<Map<String, dynamic>>> getWorkingUnitAfterDate(
       DateTime date) async {
     final dateSnapshot = await db
-        .collection("daily_pls_working_unit")
+        .collection("whms_pls_working_unit")
         .where("createAt", isGreaterThan: Timestamp.fromDate(date))
         .get();
 
@@ -150,7 +150,7 @@ class WorkingRepository {
 
     final snapshot = dateSnapshot;
     // db
-    //     .collection("daily_pls_working_unit")
+    //     .collection("whms_pls_working_unit")
     //     .where(FieldPath.documentId, whereIn: limitedIds)
     //     .where("enable", isEqualTo: true)
     //     .where("closed", isEqualTo: false)
@@ -162,7 +162,7 @@ class WorkingRepository {
   Future<QuerySnapshot<Map<String, dynamic>>> getAllWorkingUnitOfUserByClosed(
       String idUser) async {
     final snapshot = await db
-        .collection("daily_pls_working_unit")
+        .collection("whms_pls_working_unit")
         .where("assignees", arrayContains: idUser)
         .where("type", isEqualTo: TypeAssignmentDefine.task.title)
         .where("enable", isEqualTo: true)
@@ -175,7 +175,7 @@ class WorkingRepository {
       getWorkingUnitClosedForUserUpdated(DateTime date, String idU) async {
     try {
       var query1 = await db
-          .collection("daily_pls_working_unit")
+          .collection("whms_pls_working_unit")
           .where('enable', isEqualTo: true)
           .where('closed', isEqualTo: true)
           .where(Filter.or(
@@ -186,7 +186,7 @@ class WorkingRepository {
           .get();
 
       var query2 = await db
-          .collection("daily_pls_working_unit")
+          .collection("whms_pls_working_unit")
           .where('enable', isEqualTo: true)
           .where('closed', isEqualTo: true)
           .where(Filter.or(
@@ -222,7 +222,7 @@ class WorkingRepository {
       DateTime date, String idU) async {
     try {
       // var query3 = await db
-      //     .collection("daily_pls_working_unit")
+      //     .collection("whms_pls_working_unit")
       //     .where('enable', isEqualTo: true)
       //     .where('closed', isEqualTo: false)
       //     .where(Filter.or(
@@ -234,7 +234,7 @@ class WorkingRepository {
       //     .get();
 
       // var query2 = await db
-      //     .collection("daily_pls_working_unit")
+      //     .collection("whms_pls_working_unit")
       //     .where('enable', isEqualTo: true)
       //     .where('closed', isEqualTo: false)
       // .where(Filter.or(
@@ -246,7 +246,7 @@ class WorkingRepository {
       //     .get();
 
       var query1 = await db
-          .collection("daily_pls_working_unit")
+          .collection("whms_pls_working_unit")
           .where('enable', isEqualTo: true)
           .where('closed', isEqualTo: false)
           .where(Filter.or(
@@ -257,7 +257,7 @@ class WorkingRepository {
           .get();
 
       var query2 = await db
-          .collection("daily_pls_working_unit")
+          .collection("whms_pls_working_unit")
           .where('enable', isEqualTo: true)
           .where('closed', isEqualTo: false)
           .where(Filter.or(
@@ -292,7 +292,7 @@ class WorkingRepository {
   Future<QuerySnapshot<Map<String, dynamic>>> getWorkingUnitById(
       String id) async {
     final snapshot = await db
-        .collection("daily_pls_working_unit")
+        .collection("whms_pls_working_unit")
         .where("id", isEqualTo: id)
         .where("enable", isEqualTo: true)
         .where("closed", isEqualTo: false)
@@ -303,7 +303,7 @@ class WorkingRepository {
   Future<QuerySnapshot<Map<String, dynamic>>> getWorkingUnitByIdIgnoreEnable(
       String id) async {
     final snapshot = await db
-        .collection("daily_pls_working_unit")
+        .collection("whms_pls_working_unit")
         .where("id", isEqualTo: id)
         .get();
     return snapshot;
@@ -312,7 +312,7 @@ class WorkingRepository {
   Future<QuerySnapshot<Map<String, dynamic>>> getWorkingUnitByIdIgnoreClosed(
       String id) async {
     final snapshot = await db
-        .collection("daily_pls_working_unit")
+        .collection("whms_pls_working_unit")
         .where("id", isEqualTo: id)
         .where("enable", isEqualTo: true)
         .get();
@@ -322,7 +322,7 @@ class WorkingRepository {
   // Future<QuerySnapshot<Map<String, dynamic>>> getWorkingUnitByScopeId(
   //     String id, {bool isClosed = false}) async {
   //   final snapshot = await db
-  //       .collection("daily_pls_working_unit")
+  //       .collection("whms_pls_working_unit")
   //       .where("scope", arrayContains: id)
   //       .where("enable", isEqualTo: true)
   //       .where("closed", isEqualTo: isClosed)
@@ -333,7 +333,7 @@ class WorkingRepository {
   Future<QuerySnapshot<Map<String, dynamic>>> getWorkingUnitByScopeId(String id,
       {bool isAll = false}) async {
     Query<Map<String, dynamic>> query = db
-        .collection("daily_pls_working_unit")
+        .collection("whms_pls_working_unit")
         .where("scope", arrayContains: id)
         .where("enable", isEqualTo: true);
 
@@ -349,13 +349,13 @@ class WorkingRepository {
   getWorkingUnitByScopeIdUpdated(DateTime date, String id, {bool isAll = false}) async {
     try {
       Query<Map<String, dynamic>> query1 = db
-          .collection("daily_pls_working_unit")
+          .collection("whms_pls_working_unit")
           .where("scope", arrayContains: id)
           .where("enable", isEqualTo: true)
           .where("updateAt", isGreaterThan: date);
 
       Query<Map<String, dynamic>> query2 = db
-          .collection("daily_pls_working_unit")
+          .collection("whms_pls_working_unit")
           .where("scope", arrayContains: id)
           .where("enable", isEqualTo: true)
           .where("createAt", isGreaterThanOrEqualTo: date);
@@ -392,7 +392,7 @@ class WorkingRepository {
   Future<QuerySnapshot<Map<String, dynamic>>> getWorkingUnitAsOkrs(
       String okrsGroup, String type) async {
     final snapshot = await db
-        .collection("daily_pls_working_unit")
+        .collection("whms_pls_working_unit")
         .where("okr", arrayContains: okrsGroup)
         .where("type", isEqualTo: type)
         .where("enable", isEqualTo: true)
@@ -404,7 +404,7 @@ class WorkingRepository {
   Future<QuerySnapshot<Map<String, dynamic>>> getSSTByScopeIdIC(
       String id) async {
     final snapshot = await db
-        .collection("daily_pls_working_unit")
+        .collection("whms_pls_working_unit")
         .where("scope", arrayContains: id)
         .where("type", whereIn: [
           TypeAssignmentDefine.sprint.title,
@@ -420,7 +420,7 @@ class WorkingRepository {
   Future<QuerySnapshot<Map<String, dynamic>>> getWorkingUnitByIdUser(
       String id) async {
     final snapshot = await db
-        .collection("daily_pls_working_unit")
+        .collection("whms_pls_working_unit")
         .where("assignees", arrayContains: id)
         .where("enable", isEqualTo: true)
         .where("closed", isEqualTo: false)
@@ -431,7 +431,7 @@ class WorkingRepository {
   Future<QuerySnapshot<Map<String, dynamic>>>
       getWorkingUnitByIdUserIgnoreClosed(String id) async {
     final snapshot = await db
-        .collection("daily_pls_working_unit")
+        .collection("whms_pls_working_unit")
         .where("assignees", arrayContains: id)
         .where("enable", isEqualTo: true)
         .get();
@@ -441,7 +441,7 @@ class WorkingRepository {
   Future<QuerySnapshot<Map<String, dynamic>>> getWorkingUnitByParent(
       String idPar) async {
     final snapshot = await db
-        .collection("daily_pls_working_unit")
+        .collection("whms_pls_working_unit")
         .where("parent", isEqualTo: idPar)
         .where("enable", isEqualTo: true)
         .where("closed", isEqualTo: false)
@@ -452,7 +452,7 @@ class WorkingRepository {
   Future<QuerySnapshot<Map<String, dynamic>>>
       getWorkingUnitByParentIgnoreClosed(String idPar) async {
     final snapshot = await db
-        .collection("daily_pls_working_unit")
+        .collection("whms_pls_working_unit")
         .where("parent", isEqualTo: idPar)
         .where("enable", isEqualTo: true)
         .get();
@@ -463,14 +463,14 @@ class WorkingRepository {
   getWorkingUnitByParentIgnoreClosedUpdated(DateTime date, String id) async {
     try {
       var query1 = await db
-          .collection("daily_pls_working_unit")
+          .collection("whms_pls_working_unit")
           .where("parent", isEqualTo: id)
           .where("enable", isEqualTo: true)
           .where("updateAt", isGreaterThan: date)
           .get();
 
       var query2 = await db
-          .collection("daily_pls_working_unit")
+          .collection("whms_pls_working_unit")
           .where("parent", isEqualTo: id)
           .where("enable", isEqualTo: true)
           .where("createAt", isGreaterThanOrEqualTo: date)
@@ -501,7 +501,7 @@ class WorkingRepository {
   Future<QuerySnapshot<Map<String, dynamic>>> getWorkingUnitByScope(
       String idScp) async {
     final snapshot = await db
-        .collection("daily_pls_working_unit")
+        .collection("whms_pls_working_unit")
         .where("scope", arrayContains: idScp)
         .where("enable", isEqualTo: true)
         .where("closed", isEqualTo: false)
@@ -511,8 +511,8 @@ class WorkingRepository {
 
   Future<void> createWorkingUnit(WorkingUnitModel work) async {
     await db
-        .collection('daily_pls_working_unit')
-        .doc("daily_pls_working_unit_${work.id}")
+        .collection('whms_pls_working_unit')
+        .doc("whms_pls_working_unit_${work.id}")
         .set({
       ...work.toJson(),
       // "createAt": DateTime.now(),
@@ -522,8 +522,8 @@ class WorkingRepository {
 
   // Future<void> updateWorkingUnit(WorkingUnitModel work) async {
   //   await db
-  //       .collection('daily_pls_working_unit')
-  //       .doc("daily_pls_working_unit_${work.id}")
+  //       .collection('whms_pls_working_unit')
+  //       .doc("whms_pls_working_unit_${work.id}")
   //       .set({
   //     ...work.toJson(),
   //     "updateAt": DateTimeUtils.getTimestampNow(),
@@ -551,8 +551,8 @@ class WorkingRepository {
     }
     bool isUpdateStatus = updateFields.containsKey('status');
     await db
-        .collection('daily_pls_working_unit')
-        .doc("daily_pls_working_unit_${work.id}")
+        .collection('whms_pls_working_unit')
+        .doc("whms_pls_working_unit_${work.id}")
         .update({
       ...updatedMap,
       if (isGetUpdateTime) "updateAt": Timestamp.now(),
@@ -565,7 +565,7 @@ class WorkingRepository {
   Future<QuerySnapshot<Map<String, dynamic>>> getEpicByScopeIgnoreClosed(
       String idScp) async {
     final snapshot = await db
-        .collection("daily_pls_working_unit")
+        .collection("whms_pls_working_unit")
         .where("scope", arrayContains: idScp)
         .where("type", isEqualTo: TypeAssignmentDefine.epic.title)
         .where("enable", isEqualTo: true)
@@ -578,7 +578,7 @@ class WorkingRepository {
 
   Future<QuerySnapshot<Map<String, dynamic>>> getAllWorkField() async {
     final snapshot = await db
-        .collection("daily_pls_work_field")
+        .collection("whms_pls_work_field")
         .where("enable", isEqualTo: true)
         .get();
     return snapshot;
@@ -586,14 +586,14 @@ class WorkingRepository {
 
   Future<QuerySnapshot<Map<String, dynamic>>>
       getAllWorkFieldIgnoreEnable() async {
-    final snapshot = await db.collection("daily_pls_work_field").get();
+    final snapshot = await db.collection("whms_pls_work_field").get();
     return snapshot;
   }
 
   Future<QuerySnapshot<Map<String, dynamic>>> getWorkFieldById(
       String id) async {
     final snapshot = await db
-        .collection("daily_pls_work_field")
+        .collection("whms_pls_work_field")
         .where("id", isEqualTo: id)
         .where("enable", isEqualTo: true)
         .get();
@@ -603,7 +603,7 @@ class WorkingRepository {
   Future<QuerySnapshot<Map<String, dynamic>>> getWorkFieldByWorkShift(
       String workShift) async {
     final snapshot = await db
-        .collection("daily_pls_work_field")
+        .collection("whms_pls_work_field")
         .where("work_shift", isEqualTo: workShift)
         .where('enable', isEqualTo: true)
         .get();
@@ -613,7 +613,7 @@ class WorkingRepository {
   Future<QuerySnapshot<Map<String, dynamic>>> getWorkFieldByWorkShiftUpdated(
       String workShift, DateTime date) async {
     final snapshot = await db
-        .collection("daily_pls_work_field")
+        .collection("whms_pls_work_field")
         .where("work_shift", isEqualTo: workShift)
         .where("updateAt", isGreaterThan: date)
         .where('enable', isEqualTo: true)
@@ -624,7 +624,7 @@ class WorkingRepository {
   Future<QuerySnapshot<Map<String, dynamic>>> getWorkFieldByWorkShiftAndIdQuest(
       String workShift, String task) async {
     final snapshot = await db
-        .collection("daily_pls_work_field")
+        .collection("whms_pls_work_field")
         .where("work_shift", isEqualTo: workShift)
         .where("task_id", isEqualTo: task)
         .where('enable', isEqualTo: true)
@@ -636,7 +636,7 @@ class WorkingRepository {
       getWorkFieldByWorkShiftAndIdQuestIgnoreEnable(
           String workShift, String task) async {
     final snapshot = await db
-        .collection("daily_pls_work_field")
+        .collection("whms_pls_work_field")
         .where("work_shift", isEqualTo: workShift)
         .where("task_id", isEqualTo: task)
         .get();
@@ -645,15 +645,15 @@ class WorkingRepository {
 
   Future<void> createWorkField(WorkFieldModel work) async {
     await db
-        .collection('daily_pls_work_field')
-        .doc("daily_pls_work_field_${work.id}")
+        .collection('whms_pls_work_field')
+        .doc("whms_pls_work_field_${work.id}")
         .set(work.toJson());
   }
 
   Future<void> updateWorkField(WorkFieldModel work) async {
     await db
-        .collection('daily_pls_work_field')
-        .doc("daily_pls_work_field_${work.id}")
+        .collection('whms_pls_work_field')
+        .doc("whms_pls_work_field_${work.id}")
         .update(work.toJson());
   }
 
@@ -669,8 +669,8 @@ class WorkingRepository {
       updatedMap[k] = v;
     });
     await db
-        .collection('daily_pls_work_field')
-        .doc("daily_pls_work_field_${model.id}")
+        .collection('whms_pls_work_field')
+        .doc("whms_pls_work_field_${model.id}")
         .update({
       ...updatedMap,
       if (isGetUpdateTime) "updateAt": Timestamp.now(),

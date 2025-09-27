@@ -198,7 +198,7 @@ class ButtonCheckoutView extends StatelessWidget {
                         WorkFieldModel? newWF;
                         WorkFieldModel? oldModel;
                         final newId = FirebaseFirestore.instance
-                            .collection('daily_pls_work_field')
+                            .collection('whms_pls_work_field')
                             .doc()
                             .id;
                         if (mandatoryStatus != -9) {

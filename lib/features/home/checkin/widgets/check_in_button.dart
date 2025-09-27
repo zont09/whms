@@ -93,7 +93,7 @@ class _CheckInButtonState extends State<CheckInButton> {
           await DialogUtils.handleDialog(context, () async {
             try {
               String idWorkShift = FirebaseFirestore.instance
-                  .collection('daily_pls_work_shift')
+                  .collection('whms_pls_work_shift')
                   .doc()
                   .id;
               WorkShiftModel workShift = WorkShiftModel(
@@ -108,7 +108,7 @@ class _CheckInButtonState extends State<CheckInButton> {
               for (int i = 0; i < widget.cubit.listWorkSelected.length; i++) {
                 WorkingUnitModel work = widget.cubit.listWorkSelected[i];
                 String newId = FirebaseFirestore.instance
-                    .collection('daily_pls_work_field')
+                    .collection('whms_pls_work_field')
                     .doc()
                     .id;
                 WorkFieldModel workField = WorkFieldModel(
@@ -127,7 +127,7 @@ class _CheckInButtonState extends State<CheckInButton> {
                   for (var subtask in widget.cubit.mapWorkChild[work.id]!) {
                     WorkFieldModel wfSubtask = WorkFieldModel(
                         id: FirebaseFirestore.instance
-                            .collection('daily_pls_work_field')
+                            .collection('whms_pls_work_field')
                             .doc()
                             .id,
                         taskId: subtask.id,

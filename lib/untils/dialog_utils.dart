@@ -10,6 +10,7 @@ import 'package:whms/untils/date_time_utils.dart';
 import 'dart:html' as html;
 
 import 'package:whms/untils/scale_utils.dart';
+import 'package:whms/widgets/audio_dialog.dart';
 import 'package:whms/widgets/custom_button.dart';
 
 class DialogUtils {
@@ -383,77 +384,48 @@ class DialogUtils {
       ),
     ).then((value) => value ?? false);
   }
-  //
-  // static Future<bool> showConfirmCheckoutDialog(
-  //   BuildContext context,
-  //   String title,
-  //   int wp,
-  //   int wt,
-  //   int lt,
-  //   String message, {
-  //   Color mainColor = ColorConfig.primary2,
-  //   Color confirmColor = ColorConfig.error,
-  //   Color cancelColor = ColorConfig.primary3,
-  // }) {
-  //   return showDialog<bool>(
-  //     context: context,
-  //     barrierDismissible: false,
-  //     builder: (context) => AlertDialog(
-  //       backgroundColor: Colors.white,
-  //       shape: RoundedRectangleBorder(
-  //         borderRadius: BorderRadius.circular(24),
-  //       ),
-  //       contentPadding: EdgeInsets.all(ScaleUtils.scaleSize(25, context)),
-  //       content: ConfirmCheckoutView(
-  //         logTime: DateTimeUtils.formatDuration(lt),
-  //         workingPoint: "$wp điểm",
-  //         timeDoingTask: DateTimeUtils.formatDuration(wt),
-  //       ),
-  //     ),
-  //   ).then((value) => value ?? false);
-  // }
-  //
-  // static void showVideoDialog(BuildContext context, PlatformFile file) {
-  //   // Tạo Blob URL
-  //   final blob = html.Blob([file.bytes], 'video/${file.extension}');
-  //   final url = html.Url.createObjectUrlFromBlob(blob);
-  //
-  //   // Tạo video element
-  //   final videoElement = html.VideoElement()
-  //     ..src = url
-  //     ..style.width = '100%'
-  //     ..style.height = '100%'
-  //     ..controls = true
-  //     ..autoplay = true;
-  //
-  //   // Register view factory
-  //   final viewType = 'video-player-${DateTime.now().millisecondsSinceEpoch}';
-  //   platformViewRegistry.registerViewFactory(
-  //       viewType, (int viewId) => videoElement);
-  //
-  //   showDialog(
-  //     context: context,
-  //     builder: (context) {
-  //       return Dialog(
-  //         child: AspectRatio(
-  //           aspectRatio: 16 / 9,
-  //           child: HtmlElementView(viewType: viewType),
-  //         ),
-  //       );
-  //     },
-  //   ).then((_) {
-  //     // Cleanup
-  //     videoElement.removeAttribute('src');
-  //     html.Url.revokeObjectUrl(url);
-  //   });
-  // }
-  //
-  // static void showAudioDialog(BuildContext context, PlatformFile file) {
-  //   DialogUtils.showAlertDialog(
-  //     context,
-  //     child: AudioDialog(file: file),
-  //   );
-  // }
+
+  static void showVideoDialog(BuildContext context, PlatformFile file) {
+    // Tạo Blob URL
+    final blob = html.Blob([file.bytes], 'video/${file.extension}');
+    final url = html.Url.createObjectUrlFromBlob(blob);
+
+    // Tạo video element
+    final videoElement = html.VideoElement()
+      ..src = url
+      ..style.width = '100%'
+      ..style.height = '100%'
+      ..controls = true
+      ..autoplay = true;
+
+    // Register view factory
+    final viewType = 'video-player-${DateTime.now().millisecondsSinceEpoch}';
+    platformViewRegistry.registerViewFactory(
+        viewType, (int viewId) => videoElement);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: HtmlElementView(viewType: viewType),
+          ),
+        );
+      },
+    ).then((_) {
+      // Cleanup
+      videoElement.removeAttribute('src');
+      html.Url.revokeObjectUrl(url);
+    });
+  }
+
+  static void showAudioDialog(BuildContext context, PlatformFile file) {
+    DialogUtils.showAlertDialog(
+      context,
+      child: AudioDialog(file: file),
+    );
+  }
 }
 
 enum DialogState { success, error }

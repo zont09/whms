@@ -90,7 +90,7 @@ class CreateButton extends StatelessWidget {
         }
         await DialogUtils.handleDialog(context, () async {
           String idUser =
-              FirebaseFirestore.instance.collection('daily_pls_user').doc().id;
+              FirebaseFirestore.instance.collection('whms_pls_user').doc().id;
           UserModel newUser = UserModel(
             id: idU != "" ? idU : idUser,
             name: controllerName.text.isNotEmpty ? controllerName.text : "",

@@ -135,7 +135,7 @@ class CheckInCubit extends Cubit<int> {
 
         if (checkIn == StatusCheckInDefine.checkIn) {
           String id = FirebaseFirestore.instance
-              .collection('daily_pls_work_field')
+              .collection('whms_pls_work_field')
               .doc()
               .id;
           WorkFieldModel newWorkField = WorkFieldModel(

@@ -6,6 +6,7 @@ import 'package:whms/models/user_model.dart';
 import 'package:whms/models/working_unit_model.dart';
 
 class ConvertUtils {
+
   static convertStringToScope(WorkingUnitModel workUnit,
       List<ScopeModel> allScopes, List<ScopeModel> scopes) {
     scopes.clear();
