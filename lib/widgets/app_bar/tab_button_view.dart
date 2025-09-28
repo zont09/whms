@@ -25,7 +25,7 @@ class TabButtonView extends StatelessWidget {
                 horizontal: ScaleUtils.scaleSize(3, context)),
             child: AppBarItem(
                 key: Key('${e.index}'),
-                icon: e.icon(),
+                // icon: e.icon(),
                 title: e.title(),
                 tab: tab,
                 curTab: e.index + 1,

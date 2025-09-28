@@ -11,11 +11,7 @@ import 'package:whms/widgets/app_bar/tab_button_view.dart';
 import 'package:whms/widgets/custom_button.dart';
 
 class NewAppBar extends StatelessWidget {
-  const NewAppBar({
-    super.key,
-    required this.isHome,
-    required this.tab,
-  });
+  const NewAppBar({super.key, required this.isHome, required this.tab});
 
   final bool isHome;
   final int tab;
@@ -25,20 +21,21 @@ class NewAppBar extends StatelessWidget {
     var configsCubit = context.read<ConfigsCubit>();
     return Container(
       height: ScaleUtils.scaleSize(60, context),
-      color: Colors.transparent,
+      color: ColorConfig.primary3,
       child: Row(
         children: [
           Expanded(
             flex: 1,
             child: Container(
               alignment: Alignment.center,
-              padding:
-                  EdgeInsets.only(left: ScaleUtils.scalePadding(30, context)),
+              padding: EdgeInsets.only(
+                left: ScaleUtils.scalePadding(30, context),
+              ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Image.asset(
-                    'assets/images/logo/pls_white.png',
+                    'assets/images/logo/logo_white.png',
                     height: ScaleUtils.scaleSize(70, context),
                   ),
                 ],
@@ -50,7 +47,8 @@ class NewAppBar extends StatelessWidget {
               flex: 4,
               child: Padding(
                 padding: EdgeInsets.only(
-                    right: ScaleUtils.scalePadding(30, context)),
+                  right: ScaleUtils.scalePadding(30, context),
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -62,53 +60,52 @@ class NewAppBar extends StatelessWidget {
                       children: [
                         BlocBuilder<ConfigsCubit, ConfigsState>(
                           builder: (cc, ss) {
-                            final checkIn =
-                                ConfigsCubit.fromContext(cc).isCheckIn;
+                            final checkIn = ConfigsCubit.fromContext(
+                              cc,
+                            ).isCheckIn;
                             return SizedBox(
                               height: ScaleUtils.scaleSize(36, context),
                               child: ZButton(
-                                  title: checkIn ==
-                                              StatusCheckInDefine.notCheckIn ||
-                                          checkIn ==
-                                              StatusCheckInDefine.checkOut
-                                      ? AppText.titleCheckIn.text
-                                      : (checkIn ==
-                                              StatusCheckInDefine.breakTime
+                                title:
+                                    checkIn == StatusCheckInDefine.notCheckIn ||
+                                        checkIn == StatusCheckInDefine.checkOut
+                                    ? AppText.titleCheckIn.text
+                                    : (checkIn == StatusCheckInDefine.breakTime
                                           ? AppText.titleResume.text
                                           : AppText.titleCheckOut.text),
-                                  icon: 'assets/images/icons/ic_check_in.png',
-                                  colorBackground:
-                                      checkIn == StatusCheckInDefine.checkOut
-                                          ? ColorConfig.border4
-                                          : Colors.white,
-                                  colorBorder:
-                                      checkIn == StatusCheckInDefine.checkOut
-                                          ? ColorConfig.border4
-                                          : Colors.white,
-                                  colorTitle:
-                                      checkIn == StatusCheckInDefine.checkOut
-                                          ? Colors.white
-                                          : ColorConfig.primary1,
-                                  colorIcon:
-                                      checkIn == StatusCheckInDefine.checkOut
-                                          ? Colors.white
-                                          : ColorConfig.primary1,
-                                  sizeTitle: 14,
-                                  sizeIcon: 24,
-                                  fontWeight: FontWeight.w400,
-                                  paddingVer: 6,
-                                  paddingHor: 20,
-                                  isShadow: true,
-                                  onPressed: () async {
-                                    // await configsCubit.getConfiguration();
-                                    if (context.mounted) {
-                                      CheckInDialog.showCheckInDialog(
-                                          context);
-                                    }
-                                    // configsCubit.getDataWorkingUnitNewest();
-                                    // showAddTaskDialog(context);
-                                    // showTaskDialog(context);
-                                  }),
+                                // icon: 'assets/images/icons/ic_check_in.png',
+                                colorBackground:
+                                    checkIn == StatusCheckInDefine.checkOut
+                                    ? ColorConfig.border4
+                                    : Colors.white,
+                                colorBorder:
+                                    checkIn == StatusCheckInDefine.checkOut
+                                    ? ColorConfig.border4
+                                    : Colors.white,
+                                colorTitle:
+                                    checkIn == StatusCheckInDefine.checkOut
+                                    ? Colors.white
+                                    : ColorConfig.primary1,
+                                colorIcon:
+                                    checkIn == StatusCheckInDefine.checkOut
+                                    ? Colors.white
+                                    : ColorConfig.primary1,
+                                sizeTitle: 14,
+                                sizeIcon: 24,
+                                fontWeight: FontWeight.w400,
+                                paddingVer: 6,
+                                paddingHor: 20,
+                                isShadow: true,
+                                onPressed: () async {
+                                  // await configsCubit.getConfiguration();
+                                  if (context.mounted) {
+                                    CheckInDialog.showCheckInDialog(context);
+                                  }
+                                  // configsCubit.getDataWorkingUnitNewest();
+                                  // showAddTaskDialog(context);
+                                  // showTaskDialog(context);
+                                },
+                              ),
                             );
                           },
                         ),
@@ -122,7 +119,7 @@ class NewAppBar extends StatelessWidget {
                   ],
                 ),
               ),
-            )
+            ),
         ],
       ),
     );

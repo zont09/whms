@@ -23,14 +23,9 @@ class _PersonalMasterViewState extends State<PersonalMasterView> {
       height: double.infinity,
       width: double.infinity,
       color: Colors.white,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: EdgeInsets.all(ScaleUtils.scaleSize(20, context)),
-            child: Expanded(child: PersonalMainView(cubitMT: widget.cubit)),
-          ),
-        ],
+      child: Padding(
+        padding: EdgeInsets.all(ScaleUtils.scaleSize(20, context)),
+        child: PersonalMainView(cubitMT: widget.cubit),
       ),
     );
   }

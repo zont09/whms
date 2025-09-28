@@ -4,14 +4,13 @@ import 'package:whms/untils/scale_utils.dart';
 
 class AppBarItem extends StatelessWidget {
   const AppBarItem(
-      {super.key,
-      required this.icon,
+      {super.key, this.icon,
       required this.title,
       required this.tab,
       required this.curTab,
       required this.onTap});
 
-  final String icon;
+  final String? icon;
   final String title;
   final int tab;
   final int curTab;
@@ -24,7 +23,7 @@ class AppBarItem extends StatelessWidget {
         Container(
             height: ScaleUtils.scaleSize(36, context),
             padding: EdgeInsets.symmetric(
-                horizontal: ScaleUtils.scaleSize(12, context)),
+                horizontal: ScaleUtils.scaleSize(16, context)),
             decoration: BoxDecoration(
                 color: tab == curTab ? Colors.white : Colors.transparent,
                 borderRadius: BorderRadius.circular(1000),
@@ -39,22 +38,23 @@ class AppBarItem extends StatelessWidget {
             ),
             child: Row(children: [
               Stack(alignment: Alignment.center, children: [
-                !(tab == curTab) && icon.isNotEmpty
+                !(tab == curTab) && icon != null && icon!.isNotEmpty
                     ? Container(
                     margin: EdgeInsets.only(
                         top: ScaleUtils.scaleSize(3, context),
                         left: ScaleUtils.scaleSize(3, context)),
-                    child: Image.asset(icon,
+                    child: Image.asset(icon!,
                         color: Colors.black.withOpacity(0.3),
                         fit: BoxFit.cover,
                         height: ScaleUtils.scaleSize(24, context)))
                     : Container(),
-                if(icon.isNotEmpty)
-                Image.asset(icon,
+                if(icon != null && icon!.isNotEmpty)
+                Image.asset(icon!,
                     height: ScaleUtils.scaleSize(24, context),
                     color: tab == curTab ? ColorConfig.primary1 : Colors.white,
                     fit: BoxFit.cover)
               ]),
+              if(icon != null && icon!.isNotEmpty)
               SizedBox(width: ScaleUtils.scaleSize(6, context)),
               Text(title,
                   style: TextStyle(
