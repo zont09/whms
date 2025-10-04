@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:whms/configs/color_config.dart';
-import 'package:whms/features/home/main_tab/views/task/choose_scope_popup.dart';
+import 'package:whms/features/home/main_tab/views/task/detail_task_view/choose_scope_popup.dart';
 import 'package:whms/models/scope_model.dart';
 import 'package:whms/untils/app_text.dart';
 import 'package:whms/untils/dialog_utils.dart';

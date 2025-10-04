@@ -2,7 +2,7 @@ import 'package:whms/defines/status_check_in_define.dart';
 import 'package:whms/features/home/checkin/views/no_task_view.dart';
 import 'package:whms/features/home/main_tab/blocs/task_main_view_cubit.dart';
 import 'package:whms/features/home/main_tab/screens/task_done_today_view.dart';
-import 'package:whms/features/home/main_tab/views/task/detail_task_view.dart';
+import 'package:whms/features/home/main_tab/views/task/detail_task_view/detail_task_view.dart';
 import 'package:whms/features/home/main_tab/views/task/header_list_task_view.dart';
 import 'package:whms/features/home/main_tab/views/task/loading_task_main_view.dart';
 import 'package:whms/features/home/main_tab/views/task/task_main_page.dart';

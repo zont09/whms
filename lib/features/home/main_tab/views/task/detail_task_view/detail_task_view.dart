@@ -5,7 +5,7 @@ import 'package:whms/configs/config_cubit.dart';
 import 'package:whms/defines/status_working_define.dart';
 import 'package:whms/features/home/main_tab/blocs/main_tab_cubit.dart';
 import 'package:whms/features/home/main_tab/blocs/task_main_view_cubit.dart';
-import 'package:whms/features/home/main_tab/views/task/detail_assignment_view.dart';
+import 'package:whms/features/home/main_tab/views/task/detail_task_view/detail_assignment_view.dart';
 import 'package:whms/features/home/main_tab/views/task/sub_task_view.dart';
 import 'package:whms/features/home/main_tab/views/task/task_popup_view.dart';
 import 'package:whms/models/user_model.dart';

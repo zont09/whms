@@ -7,7 +7,7 @@ import 'package:whms/models/working_unit_model.dart';
 import 'package:whms/untils/dialog_utils.dart';
 import 'package:whms/untils/scale_utils.dart';
 
-import '../../../../../configs/color_config.dart' show ColorConfig;
+import '../../../../../../configs/color_config.dart' show ColorConfig;
 
 class DetailAssignMore extends StatelessWidget {
   final Function(WorkingUnitModel) reload;
