@@ -1017,7 +1017,7 @@ Map<AppText, String> texts = {
   AppText.textReworking: "Đang sửa",
   AppText.textRevising: "Đang sửa lại",
   AppText.textUnknown: "Không rõ",
-  AppText.textTop: "First Things First",
+  AppText.textTop: "Rất gấp",
   AppText.textHigh: "Làm ngay",
   AppText.textNormal: "Bình thường",
   AppText.textLow: "Thấp",
@@ -1033,7 +1033,7 @@ Map<AppText, String> texts = {
   AppText.textCheckoutSuccess:
       "Bạn đã hoàn thành rất tốt hôm nay. Hãy dành thời gian để nghỉ ngơi và tái tạo năng lượng nhé!",
   AppText.textTaskPersonal: "Cá nhân",
-  AppText.textTaskAssign: "Trong nhóm",
+  AppText.textTaskAssign: "Được giao",
   AppText.textConfirmLogout: "Bạn có chắc chắn muốn đăng xuất",
   AppText.textPrivateKey: "-PhamNgocThinh22092004-",
   AppText.textNoTaskToday: "Hãy checkin đề được nhận task",

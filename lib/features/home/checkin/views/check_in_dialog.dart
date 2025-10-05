@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:whms/configs/color_config.dart';
 import 'package:whms/configs/config_cubit.dart';
 import 'package:whms/defines/status_check_in_define.dart';
 import 'package:whms/features/home/checkin/views/check_in_view.dart';
@@ -68,7 +69,7 @@ class CheckInDialog {
             ),
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
-                  foregroundColor: const Color(0xFFBF1D1E),
+                  foregroundColor:ColorConfig.primary2,
                   textStyle: TextStyle(
                       fontWeight: FontWeight.w800,
                       fontSize: ScaleUtils.scaleSize(18, context))),

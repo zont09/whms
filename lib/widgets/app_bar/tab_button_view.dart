@@ -73,8 +73,9 @@ class TabButtonView extends StatelessWidget {
       default: //tasker
         return [
           HomeTabBarDefine.home,
+          HomeTabBarDefine.management,
           HomeTabBarDefine.overview,
-          HomeTabBarDefine.issues,
+          HomeTabBarDefine.humanResource,
         ];
     }
   }

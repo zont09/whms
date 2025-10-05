@@ -50,19 +50,19 @@ class MainSidebar extends StatelessWidget {
                     iconSize: 20,
                     titleSize: 12,
                     icon: 'assets/images/icons/tab_bar/ic_tab_today.png',
-                    title: AppText.titleToday.text,
-                    numQuest: cubit.taskToday),
-                MainSidebarItem(
-                    onTap: () {
-                      if (curTab == "206") return;
-                      context.go('${AppRoutes.mainTab}/206');
-                    },
-                    isActive: curTab == "206",
-                    iconSize: 20,
-                    titleSize: 12,
-                    icon: 'assets/images/icons/ic_doing.png',
                     title: AppText.titleDoing.text,
-                    numQuest: cubit.taskDoing),
+                    numQuest: cubit.taskToday),
+                // MainSidebarItem(
+                //     onTap: () {
+                //       if (curTab == "206") return;
+                //       context.go('${AppRoutes.mainTab}/206');
+                //     },
+                //     isActive: curTab == "206",
+                //     iconSize: 20,
+                //     titleSize: 12,
+                //     icon: 'assets/images/icons/ic_doing.png',
+                //     title: AppText.titleDoing.text,
+                //     numQuest: cubit.taskDoing),
                 MainSidebarItem(
                     onTap: () {
                       if (curTab == "202") return;
@@ -96,18 +96,18 @@ class MainSidebar extends StatelessWidget {
                     icon: 'assets/images/icons/tab_bar/ic_tab_task_personal.png',
                     title: AppText.textTaskPersonal.text,
                     numQuest: cubit.taskPersonal),
-                MainSidebarItem(
-                    onTap: () {
-                      if (curTab == "207") return;
-                      context.go('${AppRoutes.mainTab}/207');
-                    },
-                    isActive: curTab == "207",
-                    iconSize: 20,
-                    titleSize: 12,
-                    icon:
-                        'assets/images/icons/tab_bar/ic_task_follower.png',
-                    title: AppText.textTaskFollowing.text,
-                    numQuest: cubit.taskFollowing),
+                // MainSidebarItem(
+                //     onTap: () {
+                //       if (curTab == "207") return;
+                //       context.go('${AppRoutes.mainTab}/207');
+                //     },
+                //     isActive: curTab == "207",
+                //     iconSize: 20,
+                //     titleSize: 12,
+                //     icon:
+                //         'assets/images/icons/tab_bar/ic_task_follower.png',
+                //     title: AppText.textTaskFollowing.text,
+                //     numQuest: cubit.taskFollowing),
                 MainSidebarItem(
                     onTap: () {
                       if (curTab == "204") return;

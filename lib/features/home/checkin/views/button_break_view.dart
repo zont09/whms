@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:whms/configs/color_config.dart';
 import 'package:whms/configs/config_cubit.dart';
 import 'package:whms/defines/status_check_in_define.dart';
 import 'package:whms/features/home/checkin/blocs/check_in_cubit.dart';
@@ -23,7 +24,7 @@ class ButtonBreakView extends StatelessWidget {
         ZButton(
           title: AppText.btnCancel.text,
           icon: "",
-          colorTitle: const Color(0xFFBF1D1E),
+          colorTitle: ColorConfig.primary2,
           colorBackground: Colors.white,
           colorBorder: Colors.white,
           sizeTitle: 16,
@@ -39,8 +40,8 @@ class ButtonBreakView extends StatelessWidget {
           paddingHor: 14,
           title: AppText.btnResume.text,
           icon: "",
-          colorBackground: const Color(0xFFFF474E),
-          colorBorder: const Color(0xFFFF474E),
+          colorBackground: ColorConfig.primary2,
+          colorBorder: ColorConfig.primary2,
           sizeTitle: 16,
           paddingVer: 6,
           fontWeight: FontWeight.w600,

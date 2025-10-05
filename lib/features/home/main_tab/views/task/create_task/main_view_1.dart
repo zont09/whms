@@ -55,7 +55,7 @@ class MainView1 extends StatelessWidget {
                     },
                     child: Container(
                       decoration: BoxDecoration(
-                          color: const Color(0xFFFFD0D2),
+                          color: const Color(0xFFedf8ff),
                           borderRadius: BorderRadius.circular(
                               ScaleUtils.scaleSize(12, context))),
                       padding: EdgeInsets.symmetric(

@@ -59,7 +59,7 @@ class HeaderView extends StatelessWidget {
             SizedBox(width: ScaleUtils.scaleSize(5, context)),
             Container(
               decoration: BoxDecoration(
-                  color: const Color(0xFFFFD0D2),
+                  color: const Color(0xFFedf8ff),
                   borderRadius:
                       BorderRadius.circular(ScaleUtils.scaleSize(12, context))),
               padding: EdgeInsets.symmetric(

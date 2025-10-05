@@ -102,6 +102,9 @@ flutter:
     - assets/images/icons/
     - assets/images/icons/tab_bar/
     - assets/images/icons/profile_icon/
+    - assets/images/icons/task_icon/
+    - assets/images/icons/task_icon/icon/
+    - assets/images/icons/task_icon/emoji/
   fonts:
     - family: Afacad
       fonts:

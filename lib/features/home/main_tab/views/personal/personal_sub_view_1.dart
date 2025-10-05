@@ -36,7 +36,7 @@ class PersonalSubView1 extends StatelessWidget {
           children: [
             Image.asset(iconTitle,
                 height: ScaleUtils.scaleSize(20, context),
-                color: const Color(0xFFBF0000)),
+                color: ColorConfig.primary2),
             SizedBox(width: ScaleUtils.scaleSize(5, context)),
             Text(title,
                 style: TextStyle(

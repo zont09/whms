@@ -53,7 +53,7 @@ class CreateSubTaskView extends StatelessWidget {
                         decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(
                                 ScaleUtils.scaleSize(12, context)),
-                            color: const Color(0xFFFFD0D2)),
+                            color: const Color(0xFFedf8ff)),
                         padding: EdgeInsets.symmetric(
                             horizontal: ScaleUtils.scaleSize(8, context),
                             vertical: ScaleUtils.scaleSize(4, context)),

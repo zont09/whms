@@ -18,7 +18,7 @@ class TimeOfDayView extends StatelessWidget {
             border: Border.all(
                 width: ScaleUtils.scaleSize(1, context),
                 color: ColorConfig.primary3),
-            color: const Color(0xFFFFECEC)),
+            color: const Color(0xFFedf8ff)),
         padding: EdgeInsets.symmetric(
             horizontal: ScaleUtils.scaleSize(12, context),
             vertical: ScaleUtils.scaleSize(4, context)),

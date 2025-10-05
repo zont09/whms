@@ -137,7 +137,7 @@ class CustomTimePicker extends StatelessWidget {
                   ],
                 ),
                 Container(
-                  color: Color(0xFFFFECEC),
+                  color: Color(0xFFedf8ff),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [

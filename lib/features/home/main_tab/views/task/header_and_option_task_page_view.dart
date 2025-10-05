@@ -33,7 +33,7 @@ class HeaderAndOptionTaskPageView extends StatelessWidget {
       child: Row(children: [
         Image.asset('assets/images/icons/ic_list_task.png',
             height: ScaleUtils.scaleSize(20, context),
-            color: const Color(0xFFBF0000)),
+            color: ColorConfig.primary2),
         SizedBox(width: ScaleUtils.scaleSize(5, context)),
         Text(AppText.titleTaskList.text,
             style: TextStyle(

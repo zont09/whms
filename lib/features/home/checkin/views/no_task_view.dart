@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:whms/configs/color_config.dart';
 import 'package:whms/configs/config_cubit.dart';
+import 'package:whms/features/home/main_tab/views/task/create_assignment_popup.dart';
 import 'package:whms/models/working_unit_model.dart';
 import 'package:whms/untils/app_text.dart';
 import 'package:whms/untils/dialog_utils.dart';
@@ -118,17 +119,17 @@ class NoTaskView extends StatelessWidget {
                 paddingHor: 20,
                 paddingVer: 4,
                 onPressed: () async {
-                  // await DialogUtils.showAlertDialog(context,
-                  //     child: CreateAssignmentPopup(
-                  //         typeAssignment: 1000,
-                  //         selectedWorking: WorkingUnitModel(),
-                  //         assignees: [user.id],
-                  //         userId: user.id,
-                  //         reload: (v) {},
-                  //         scopes: []));
-                  // if (context.mounted) {
-                  //   // BlocProvider.of<MainTabCubit>(context).initData(context);
-                  // }
+                  await DialogUtils.showAlertDialog(context,
+                      child: CreateAssignmentPopup(
+                          typeAssignment: 1000,
+                          selectedWorking: WorkingUnitModel(),
+                          assignees: [user.id],
+                          userId: user.id,
+                          reload: (v) {},
+                          scopes: []));
+                  if (context.mounted) {
+                    // BlocProvider.of<MainTabCubit>(context).initData(context);
+                  }
                 })
         ],
       ),

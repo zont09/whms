@@ -43,7 +43,7 @@ class PersonalMainView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                        flex: 17,
+                        flex: 20,
                         child: !isEmptyAll
                             ? SingleChildScrollView(
                                 child: Padding(

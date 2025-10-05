@@ -37,7 +37,7 @@ class DetailTaskView extends StatelessWidget {
         borderRadius: BorderRadius.circular(ScaleUtils.scaleSize(14, context)),
         border: Border.all(
             width: ScaleUtils.scaleSize(1, context),
-            color: ColorConfig.border5),
+            color: ColorConfig.primary2),
         boxShadow: [
           BoxShadow(
             offset: const Offset(1, 1),

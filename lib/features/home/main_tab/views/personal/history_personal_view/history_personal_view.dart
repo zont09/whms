@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:whms/configs/color_config.dart';
 import 'package:whms/configs/config_cubit.dart';
 import 'package:whms/features/home/main_tab/blocs/work_history_cubit.dart';
 import 'package:whms/features/home/main_tab/views/personal/history_personal_view/header_history_table.dart';
@@ -47,7 +48,7 @@ class HistoryPersonalView extends StatelessWidget {
                       Image.asset(
                           "assets/images/icons/tab_bar/ic_tab_today.png",
                           height: ScaleUtils.scaleSize(20, context),
-                          color: const Color(0xFFBF0000)),
+                          color: ColorConfig.primary2),
                       SizedBox(width: ScaleUtils.scaleSize(5, context)),
                       Text(AppText.titleWorkHistory.text,
                           style: TextStyle(

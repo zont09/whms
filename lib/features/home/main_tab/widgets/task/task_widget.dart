@@ -47,7 +47,7 @@ class TaskWidget extends StatelessWidget {
                 border: Border.all(
                     width: ScaleUtils.scaleSize(1, context),
                     color:
-                        isSelected ? ColorConfig.redState : Colors.transparent),
+                        isSelected ? ColorConfig.primary2 : Colors.transparent),
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(

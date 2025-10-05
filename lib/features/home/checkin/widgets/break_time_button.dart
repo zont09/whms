@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:whms/configs/color_config.dart';
 import 'package:whms/configs/config_cubit.dart';
 import 'package:whms/defines/status_check_in_define.dart';
 import 'package:whms/features/home/checkin/blocs/check_out_cubit.dart';
@@ -22,8 +23,8 @@ class BreakTimeButton extends StatelessWidget {
         paddingHor: 14,
         title: AppText.btnResume.text,
         icon: "",
-        colorBackground: const Color(0xFFFF474E),
-        colorBorder: const Color(0xFFFF474E),
+        colorBackground: ColorConfig.primary3,
+        colorBorder: ColorConfig.primary3,
         sizeTitle: 16,
         paddingVer: 6,
         fontWeight: FontWeight.w600,
