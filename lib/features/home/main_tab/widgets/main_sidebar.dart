@@ -121,76 +121,6 @@ class MainSidebar extends StatelessWidget {
                     numQuest: cubit.taskAssign)
               ]),
           MenuItem(
-              icon: 'assets/images/icons/tab_bar/ic_tab_note.png',
-              title: AppText.titleNote.text,
-              onTap: () {
-                if (curTab == "3") return;
-                context.go('${AppRoutes.mainTab}/3');
-              },
-              tab: "3",
-              curTab: curTab,
-              children: [
-                ...cubit.listUserScope.where((e) => e.id != "personal").map(
-                      (e) => MenuItem(
-                          onTap: () {
-                            if (curTab == "3&scp=${e.id}") return;
-                            context.go('${AppRoutes.mainTab}/3&scp=${e.id}');
-                          },
-                          curTab: curTab,
-                          tab: "3&scp=${e.id}",
-                          iconSize: 20,
-                          fontSize: 15,
-                          icon: 'assets/images/icons/tab_bar/ic_tab_scope.png',
-                          title: e.title,
-                          numQuest: -1,
-                          children: [
-                            if (cubit.mapProjectInScope[e.id] != null)
-                              ...cubit.mapProjectInScope[e.id]!
-                                  .map((p) => MenuItem(
-                                      onTap: () {
-                                        if (curTab ==
-                                            "3&scp=${e.id}&prj=${p.id}") return;
-                                        context.go(
-                                            '${AppRoutes.mainTab}/3&scp=${e.id}&prj=${p.id}');
-                                      },
-                                      curTab: curTab,
-                                      tab: "3&scp=${e.id}&prj=${p.id}",
-                                      iconSize: 20,
-                                      fontSize: 15,
-                                      icon: 'assets/images/icons/ic_epic.png',
-                                      title: p.title,
-                                      children: const [],
-                                      numQuest: -1)),
-                          ]),
-                    ),
-                MenuItem(
-                    onTap: () {
-                      if (curTab == "3&scp=personal") return;
-                      context.go('${AppRoutes.mainTab}/3&scp=personal');
-                    },
-                    curTab: curTab,
-                    tab: "3&scp=personal",
-                    iconSize: 20,
-                    fontSize: 15,
-                    icon:
-                        'assets/images/icons/tab_bar/ic_tab_note_personal.png',
-                    title: AppText.titlePersonal.text,
-                    numQuest: -1,
-                    children: const []),
-                // MainSidebarItem(
-                //     onTap: () {
-                //       if (curTab == "3&scp=personal") return;
-                //       context.go('${AppRoutes.mainTab}/3&scp=personal');
-                //     },
-                //     isActive: curTab == "3&scp=personal",
-                //     iconSize: 20,
-                //     titleSize: 12,
-                //     icon:
-                //         'assets/images/icons/tab_bar/ic_tab_note_personal.png',
-                //     title: AppText.titlePersonal.text,
-                //     numQuest: -1)
-              ]),
-          MenuItem(
               icon: 'assets/images/icons/tab_bar/ic_tab_meeting.png',
               title: AppText.titleMeetings.text,
               onTap: () {
@@ -200,17 +130,6 @@ class MainSidebar extends StatelessWidget {
               tab: "4",
               curTab: curTab,
               children: []),
-          MenuItem(
-              icon: 'assets/images/icons/ic_okr.png',
-              title: AppText.titleOKR.text,
-              tab: "5",
-              curTab: curTab,
-              onTap: () {
-                if (curTab != "5") {
-                  context.go('${AppRoutes.mainTab}/5');
-                }
-              },
-              children: const []),
           SizedBox(height: ScaleUtils.scaleSize(20, context)),
           // const IssueReportButton()
         ]));

@@ -19,9 +19,9 @@ class MeetingOptionView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Image.asset('assets/images/icons/ic_filter_issues.png',
-            height: ScaleUtils.scaleSize(20, context)),
-        const ZSpace(w: 8),
+        // Image.asset('assets/images/icons/ic_filter_issues.png',
+        //     height: ScaleUtils.scaleSize(20, context)),
+        // const ZSpace(w: 8),
         DropdownString(
           onChanged: (v) {
             cubit.changeFilter(v!);

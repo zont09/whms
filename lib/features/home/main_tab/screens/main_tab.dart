@@ -1,4 +1,5 @@
 import 'package:whms/configs/color_config.dart';
+import 'package:whms/features/home/main_tab/views/meeting/meeting_main_view.dart';
 import 'package:whms/features/home/main_tab/views/personal/personal_master_view.dart';
 import 'package:whms/features/home/main_tab/views/task/task_main_view.dart';
 import 'package:whms/features/home/main_tab/widgets/main_sidebar.dart';
@@ -154,7 +155,7 @@ Widget getTabMainScreen(
   String mainTab = tab[0];
   final tabViews = {
     "1": PersonalMasterView(cubit: cubit),
-    // "4": MeetingMainView(tab: tab),
+    "4": MeetingMainView(tab: tab),
   };
   return tabViews[mainTab] ?? const Center(child: InvalidWidget());
 }

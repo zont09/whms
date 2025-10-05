@@ -114,7 +114,7 @@ class ListAttachmentsView extends StatelessWidget {
                             vertical: ScaleUtils.scaleSize(4, context)),
                         child: Row(children: [
                           Image.asset('assets/images/icons/ic_upload_2.png',
-                              height: ScaleUtils.scaleSize(16, context)),
+                              height: ScaleUtils.scaleSize(16, context), color: ColorConfig.primary2,),
                           const ZSpace(w: 4),
                           Text(AppText.titleAddFileAttachment.text,
                               style: TextStyle(
