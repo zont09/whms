@@ -79,7 +79,7 @@ class AppbarManager extends StatelessWidget implements PreferredSizeWidget {
                   //   onTap: () {},
                   // ),
                   // SizedBox(width: ScaleUtils.scaleSize(24, context)),
-                  // CustomButton(
+                  // ZButton(
                   //     title: AppText.titleCheckIn.text,
                   //     icon: 'assets/images/icons/ic_check_in.png',
                   //     colorBackground: ColorConfig.primary2,

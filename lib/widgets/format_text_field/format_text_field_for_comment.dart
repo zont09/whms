@@ -147,8 +147,8 @@ class _FormatTextFieldForCommentState extends State<FormatTextFieldForComment> {
                       showSubscript: false,
                       showSuperscript: false,
                       multiRowsDisplay: true,
-                      customButtons: [
-                        QuillToolbarCustomButtonOptions(
+                      ZButtons: [
+                        QuillToolbarZButtonOptions(
                             icon: Icon(
                               Icons.image,
                               size: 16,
@@ -157,7 +157,7 @@ class _FormatTextFieldForCommentState extends State<FormatTextFieldForComment> {
                             onPressed: () async {
                               await widget.cubit.pickImage();
                             }),
-                        QuillToolbarCustomButtonOptions(
+                        QuillToolbarZButtonOptions(
                             icon: Icon(
                               Icons.video_camera_back_rounded,
                               size: 16,
@@ -166,7 +166,7 @@ class _FormatTextFieldForCommentState extends State<FormatTextFieldForComment> {
                             onPressed: () async {
                               await widget.cubit.pickVideo();
                             }),
-                        QuillToolbarCustomButtonOptions(
+                        QuillToolbarZButtonOptions(
                             icon: Icon(
                               Icons.attachment,
                               size: 16,

@@ -92,7 +92,7 @@ class ScopeTab extends StatelessWidget {
                 // ),
                 // Row(
                 //   children: [
-                //     CustomButton(
+                //     ZButton(
                 //         title: AppText.btnAddScope.text,
                 //         icon: 'assets/images/icons/ic_add.png',
                 //         colorIcon: Colors.white,
@@ -102,7 +102,7 @@ class ScopeTab extends StatelessWidget {
                 //           await cubit.load();
                 //         }),
                 //     SizedBox(width: ScaleUtils.scaleSize(10, context)),
-                //     CustomButton(
+                //     ZButton(
                 //         title: AppText.btnFilterWork.text,
                 //         icon: 'assets/images/icons/ic_filter_1.png',
                 //         onPressed: () {}),

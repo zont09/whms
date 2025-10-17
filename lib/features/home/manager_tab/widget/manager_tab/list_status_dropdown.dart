@@ -1,11 +1,11 @@
-import 'package:dropdown_button2/dropdown_button2.dart';
-import 'package:flutter/material.dart';
-import 'package:whms/configs/color_config.dart';
-import 'package:whms/defines/status_working_define.dart';
 import 'package:whms/features/home/checkin/widgets/status_card.dart';
 import 'package:whms/untils/app_text.dart';
+import 'package:whms/configs/color_config.dart';
+import 'package:whms/defines/status_working_define.dart';
 import 'package:whms/untils/scale_utils.dart';
 import 'package:whms/untils/toast_utils.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:flutter/material.dart';
 
 class ListStatusDropdown extends StatefulWidget {
   final int selector;
@@ -123,7 +123,7 @@ class ListStatusDropdownState extends State<ListStatusDropdown> {
                           borderSide: const BorderSide(
                               color: Colors.transparent, width: 0))),
                   value: items.contains(_selectedItem) ? _selectedItem : null,
-                  ZButton: Row(
+                  customButton: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         SizedBox(width: ScaleUtils.scaleSize(10, context)),
