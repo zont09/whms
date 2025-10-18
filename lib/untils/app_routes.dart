@@ -13,7 +13,7 @@ class AppRoutes{
   static String overview = '/home/overview';
   static String manager = '/home/manager';
   static String report = '/home/report';
-  static String hr = '/home/hr';
+  static String hr = '/home/views';
   static String okrs = '/home/okrs';
   static String issues = '/home/issues';
   static String configs = '/configs';

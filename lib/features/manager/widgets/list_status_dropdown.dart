@@ -123,7 +123,7 @@ class ListStatusDropdownState extends State<ListStatusDropdown> {
                           borderSide: const BorderSide(
                               color: Colors.transparent, width: 0))),
                   value: items.contains(_selectedItem) ? _selectedItem : null,
-                  ZButton: Row(
+                  customButton: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         SizedBox(width: ScaleUtils.scaleSize(10, context)),
