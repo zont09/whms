@@ -11,6 +11,7 @@ import 'package:whms/features/login/screens/login_screens.dart';
 import 'package:whms/features/manager/screens/manager_home_screens.dart';
 import 'package:whms/features/manager/screens/profile_screens.dart';
 import 'package:whms/features/page_not_found/page_not_found_screen.dart';
+import 'package:whms/features/test.dart';
 import 'package:whms/untils/app_routes.dart';
 import 'package:whms/untils/date_time_utils.dart';
 import 'package:whms/widgets/page_check.dart';
@@ -161,16 +162,19 @@ class SetupGoRouter {
           //     '=========> manager $scope -- $tab -- $scopeAndTab -- ${state.pathParameters['scopeAndTab']}');
           cfC.getDataWorkingUnitByScopeNewest(scope);
           cfC.saveSaveTab(
-              cfC.keySaveTabManagement, "${AppRoutes.manager}/$scopeAndTab");
+            cfC.keySaveTabManagement,
+            "${AppRoutes.manager}/$scopeAndTab",
+          );
           return CustomTransitionPage(
             child: PageCheck(
-                url: '/home/manager/$scopeAndTab',
-                screen: ManagerTab(
-                  scope: ConfigsCubit.localScopeId.isEmpty
-                      ? scope
-                      : ConfigsCubit.localScopeId,
-                  tab: tab,
-                )),
+              url: '/home/manager/$scopeAndTab',
+              screen: ManagerTab(
+                scope: ConfigsCubit.localScopeId.isEmpty
+                    ? scope
+                    : ConfigsCubit.localScopeId,
+                tab: tab,
+              ),
+            ),
             transitionsBuilder: fadeTransitionBuilder,
           );
         },
@@ -196,13 +200,12 @@ class SetupGoRouter {
           final cfC = ConfigsCubit.fromContext(context);
           cfC.saveSaveTab(cfC.keySaveTabHr, "${AppRoutes.hr}/$tab");
           return CustomTransitionPage(
-              child: PageCheck(
-                url: AppRoutes.hr,
-                screen: HRTab(
-                  tab: tab,
-                ),
-              ),
-              transitionsBuilder: fadeTransitionBuilder);
+            child: PageCheck(
+              url: AppRoutes.hr,
+              screen: HRTab(tab: tab),
+            ),
+            transitionsBuilder: fadeTransitionBuilder,
+          );
         },
       ),
       GoRoute(
@@ -218,13 +221,29 @@ class SetupGoRouter {
           final cfC = ConfigsCubit.fromContext(context);
           cfC.saveSaveTab(cfC.keySaveTabOverview, "${AppRoutes.overview}/$tab");
           return CustomTransitionPage(
-              child: PageCheck(
-                url: AppRoutes.overview,
-                screen: OverviewTab(
-                  tab: tab,
-                ),
-              ),
-              transitionsBuilder: fadeTransitionBuilder);
+            child: PageCheck(
+              url: AppRoutes.overview,
+              screen: OverviewTab(tab: tab),
+            ),
+            transitionsBuilder: fadeTransitionBuilder,
+          );
+        },
+      ),
+      GoRoute(
+        path: "/test/:tab",
+        pageBuilder: (context, state) {
+          final tab = state.pathParameters['tab'] ?? 'name=default&room=123';
+          final query = 'name=Think&room=123';
+          final params = Uri.splitQueryString(query);
+          final name = params['name'] ?? 'default';
+          final room = params['room'] ?? '123';
+          debugPrint("[THINK] ====> test $name - $room");
+          // final cfC = ConfigsCubit.fromContext(context);
+          // cfC.saveSaveTab(cfC.keySaveTabOverview, "${AppRoutes.overview}/$tab");
+          return CustomTransitionPage(
+            child: MeetingPage(roomId: room, name: name),
+            transitionsBuilder: fadeTransitionBuilder,
+          );
         },
       ),
     ];

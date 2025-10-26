@@ -74,7 +74,8 @@ dependencies:
   pdfjs: ^2.12.9
   go_router: ^14.6.1
   flutter_bloc: ^8.1.6
-
+  flutter_webrtc: ^1.2.0
+  http: ^1.5.0
 dev_dependencies:
   flutter_test:
     sdk: flutter
