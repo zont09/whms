@@ -78,7 +78,7 @@ class ManagementAssignmentView extends StatelessWidget {
                                         }),
                                     ListAssignmentView()
                                   ])))),
-              const Expanded(flex: 350, child: ListDocumentView())
+              // const Expanded(flex: 350, child: ListDocumentView())
             ])));
   }
 }

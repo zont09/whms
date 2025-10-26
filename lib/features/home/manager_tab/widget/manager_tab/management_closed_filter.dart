@@ -27,7 +27,7 @@ class ManagementClosedFilter extends StatelessWidget {
               decoration: const BoxDecoration(
                   shape: BoxShape.circle, color: Colors.white),
               child: Image.asset(
-                'assets/images/demo/ic_filter.png',
+                'assets/images/icons/ic_filter.png',
                 color: ColorConfig.primary3,
                 scale: 3,
               ),

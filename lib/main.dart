@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_strategy/url_strategy.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:whms/configs/config_cubit.dart';
+import 'package:whms/configs/reload_cubit.dart';
 import 'package:whms/features/page_not_found/page_not_found_screen.dart';
 import 'package:whms/features/splash/screen/splash_screen.dart';
 import 'package:whms/setup_routes.dart';
@@ -66,7 +67,7 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
         providers: [
           BlocProvider(create: (context) => ConfigsCubit()..init()),
-          // BlocProvider(create: (context) => ReloadCubit())
+          BlocProvider(create: (context) => ReloadCubit())
         ],
         child: BlocBuilder<ConfigsCubit, ConfigsState>(
           builder: (cc, ss) {

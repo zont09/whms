@@ -21,7 +21,7 @@ class HrSideBar extends StatelessWidget {
         child: ListView(children: [
           ...cubit.listScope.map(
             (item) => MenuItem(
-                icon: 'assets/images/icons/issue_tab/ic_scope.png',
+                icon: 'assets/images/icons/ic_scope.png',
                 title: item.title,
                 tab: item.id,
                 curTab: curTab,

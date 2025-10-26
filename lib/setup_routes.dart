@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:whms/configs/config_cubit.dart';
+import 'package:whms/features/home/hr/views/hr_tab.dart';
 import 'package:whms/features/home/main_tab/screens/main_tab.dart';
+import 'package:whms/features/home/manager_tab/view/manager_tab.dart';
+import 'package:whms/features/home/overview/screens/overview_tab.dart';
 import 'package:whms/features/login/screens/change_password_screen.dart';
 import 'package:whms/features/login/screens/login_screens.dart';
 import 'package:whms/features/manager/screens/manager_home_screens.dart';
@@ -136,6 +139,92 @@ class SetupGoRouter {
             ),
             transitionsBuilder: fadeTransitionBuilder,
           );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.manager,
+        redirect: (context, state) {
+          print('==========> bbbbb');
+          return '${AppRoutes.manager}/0&001000000';
+        },
+      ),
+      GoRoute(
+        path: '${AppRoutes.manager}/:scopeAndTab',
+        pageBuilder: (context, state) {
+          final scopeAndTab = state.pathParameters['scopeAndTab'] ?? '0&0';
+
+          final parts = scopeAndTab.split('&');
+          final scope = parts.isNotEmpty ? parts[0] : '0';
+          final tab = parts.length > 1 ? parts[1] : '0';
+          final cfC = ConfigsCubit.fromContext(context);
+          // print(
+          //     '=========> manager $scope -- $tab -- $scopeAndTab -- ${state.pathParameters['scopeAndTab']}');
+          cfC.getDataWorkingUnitByScopeNewest(scope);
+          cfC.saveSaveTab(
+              cfC.keySaveTabManagement, "${AppRoutes.manager}/$scopeAndTab");
+          return CustomTransitionPage(
+            child: PageCheck(
+                url: '/home/manager/$scopeAndTab',
+                screen: ManagerTab(
+                  scope: ConfigsCubit.localScopeId.isEmpty
+                      ? scope
+                      : ConfigsCubit.localScopeId,
+                  tab: tab,
+                )),
+            transitionsBuilder: fadeTransitionBuilder,
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.hr,
+        redirect: (context, state) {
+          return "${AppRoutes.hr}/1";
+        },
+      ),
+      GoRoute(
+        path: "${AppRoutes.hr}/:tab",
+        pageBuilder: (context, state) {
+          final tab = state.pathParameters['tab'] ?? '1';
+          // final parts = tab.split('&');
+          // final scope = tab[0];
+          // final user = parts.length > 1 ? tab[1] : "";
+          // if(tab != '1') {
+          //   if(user.isNotEmpty) {
+          //     ConfigsCubit.fromContext(context).getWorkShiftByUser(user, date);
+          //   }
+          // }
+          final cfC = ConfigsCubit.fromContext(context);
+          cfC.saveSaveTab(cfC.keySaveTabHr, "${AppRoutes.hr}/$tab");
+          return CustomTransitionPage(
+              child: PageCheck(
+                url: AppRoutes.hr,
+                screen: HRTab(
+                  tab: tab,
+                ),
+              ),
+              transitionsBuilder: fadeTransitionBuilder);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.overview,
+        redirect: (context, state) {
+          return "${AppRoutes.overview}/1";
+        },
+      ),
+      GoRoute(
+        path: "${AppRoutes.overview}/:tab",
+        pageBuilder: (context, state) {
+          final tab = state.pathParameters['tab'] ?? '1';
+          final cfC = ConfigsCubit.fromContext(context);
+          cfC.saveSaveTab(cfC.keySaveTabOverview, "${AppRoutes.overview}/$tab");
+          return CustomTransitionPage(
+              child: PageCheck(
+                url: AppRoutes.overview,
+                screen: OverviewTab(
+                  tab: tab,
+                ),
+              ),
+              transitionsBuilder: fadeTransitionBuilder);
         },
       ),
     ];
