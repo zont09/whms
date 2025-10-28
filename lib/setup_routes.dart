@@ -241,7 +241,7 @@ class SetupGoRouter {
           // final cfC = ConfigsCubit.fromContext(context);
           // cfC.saveSaveTab(cfC.keySaveTabOverview, "${AppRoutes.overview}/$tab");
           return CustomTransitionPage(
-            child: MeetingPage(roomId: room, name: name),
+            child: VideoCallPage(),
             transitionsBuilder: fadeTransitionBuilder,
           );
         },
