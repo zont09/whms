@@ -4,6 +4,8 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:whms/configs/color_config.dart';
+import 'package:whms/widgets/z_space.dart';
 
 class Signaling {
   final String wsUrl; // e.g. ws://yourserver:8000/ws/roomId/clientId
@@ -64,10 +66,14 @@ class Signaling {
 
     // nhận remote track
     pc.onTrack = (event) {
-      if (event.streams.isNotEmpty) {
-        remoteStreams[peerId] = event.streams[0];
-        onAddRemoteStream?.call(peerId, event.streams[0]);
-        debugPrint("[THINK] ====> check add on Track: $peerId");
+      final track = event.track;
+      debugPrint('[THINK] ====> onTrack kind=${track.kind}, streamId=${event.streams.first.id}');
+
+      // Tách camera & screen theo streamId khác nhau
+      final streamId = event.streams.first.id;
+      if (!remoteStreams.containsKey(streamId)) {
+        remoteStreams[streamId] = event.streams.first;
+        onAddRemoteStream?.call(streamId, event.streams.first);
       }
     };
 
@@ -185,6 +191,15 @@ class Signaling {
       pcs.remove(leaving);
       remoteStreams.remove(leaving);
       onRemoveRemoteStream?.call(leaving);
+    } else if (type == 'stop_screen_share') {
+      final from = msg['from'];
+      final screenId = 'screen_$from';
+
+      if (remoteStreams.containsKey(screenId)) {
+        onRemoveRemoteStream?.call(screenId);
+        remoteStreams.remove(screenId);
+        debugPrint('[THINK] ====> peer stopped screen share: $screenId');
+      }
     }
   }
 
@@ -232,23 +247,69 @@ class Signaling {
   }
 
   Future<void> startScreenShare() async {
-    // Web / Desktop: getDisplayMedia; Mobile: platform dependent
+    // Lấy stream màn hình
     final screenStream = await navigator.mediaDevices.getDisplayMedia({
       'video': true,
-      'audio': true,
+      'audio': false,
     });
-    final screenTrack = screenStream.getVideoTracks().first;
 
-    for (var pc in pcs.values) {
-      final senders = await pc.getSenders();
-      for (var s in senders) {
-        if (s.track?.kind == 'video') {
-          await s.replaceTrack(screenTrack);
-        }
-      }
+    final screenTrack = screenStream
+        .getVideoTracks()
+        .first;
+
+    // Thêm track vào tất cả peer connections
+    for (final entry in pcs.entries) {
+      final peerId = entry.key;
+      final pc = entry.value;
+
+      await pc.addTrack(screenTrack, screenStream);
+
+      // 🔥 Tạo offer mới để cập nhật stream tới peer đó
+      final offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      _send({
+        'type': 'offer',
+        'to': peerId,
+        'from': clientId,
+        'sdp': offer.toMap(),
+      });
     }
-    // set localStream to include screen
-    localStream = screenStream;
+
+    // Hiển thị local screen share trong UI (tạo video tile riêng)
+    onAddRemoteStream?.call('screen_$clientId', screenStream);
+
+    // Khi người dùng dừng chia sẻ
+    screenTrack.onEnded = () async {
+      debugPrint('[THINK] ====> screen share stopped');
+
+      for (final entry in pcs.entries) {
+        final peerId = entry.key;
+        final pc = entry.value;
+
+        // Gỡ track màn hình ra khỏi connection
+        final senders = await pc.getSenders();
+        for (final s in senders) {
+          if (s.track?.id == screenTrack.id) {
+            await pc.removeTrack(s);
+          }
+        }
+
+        // Gửi offer mới để peer kia cập nhật lại SDP
+        final offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        _send({
+          'type': 'offer',
+          'to': peerId,
+          'from': clientId,
+          'sdp': offer.toMap(),
+        });
+      }
+
+      // Gửi thông báo cho mọi peer biết là stop share
+      _send({'type': 'stop_screen_share', 'from': clientId});
+
+      onRemoveRemoteStream?.call('screen_$clientId');
+    };
   }
 
   Future<void> _flushPendingCandidates(
@@ -278,18 +339,6 @@ class Signaling {
   }
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: VideoCallPage(),
-      debugShowCheckedModeBanner: false,
-    );
-  }
-}
-
 class VideoCallPage extends StatefulWidget {
   const VideoCallPage({super.key});
 
@@ -303,6 +352,8 @@ class _VideoCallPageState extends State<VideoCallPage> {
   Signaling? signaling;
   final roomId = "room1";
   late String clientId;
+  bool isOnMic = false;
+  bool isOnCam = true;
 
   @override
   void initState() {
@@ -356,25 +407,87 @@ class _VideoCallPageState extends State<VideoCallPage> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Group Call Demo'),
-        actions: [
-          IconButton(
-            onPressed: () => signaling?.toggleMicrophone(false),
-            icon: const Icon(Icons.mic_off),
-          ),
-          IconButton(
-            onPressed: () => signaling?.toggleMicrophone(true),
-            icon: const Icon(Icons.mic),
-          ),
-          IconButton(
-            onPressed: () => signaling?.startScreenShare(),
-            icon: const Icon(Icons.screen_share),
-          ),
-        ],
+        title: const Text('Meeting'),
       ),
-      body: MeetLayout(
-        localRenderer: _localRenderer,
-        remoteRenderers: _remoteRenderers,
+      body: Stack(
+        children: [
+          MeetLayout(
+            localRenderer: _localRenderer,
+            remoteRenderers: _remoteRenderers,
+          ),
+          Positioned(
+
+            // left: 0,
+            //   right: 0,
+            //   bottom: ,
+            bottom: 20,
+              left: 0,
+              right: 0,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  InkWell(
+                    hoverColor: Colors.transparent,
+                    splashColor: Colors.transparent,
+                    highlightColor: Colors.transparent,
+                    onTap: () {
+                      signaling?.toggleMicrophone(!isOnMic);
+                      setState(() {
+                        isOnMic = !isOnMic;
+                      });
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFFEBEBEB),
+                        boxShadow: const [ColorConfig.boxShadow2]
+                      ),
+                      padding: EdgeInsets.all(9),
+                      child: Icon(isOnMic ? Icons.mic : Icons.mic_off),
+                    ),
+                  ),
+                  const ZSpace(w: 9),
+                  InkWell(
+                    hoverColor: Colors.transparent,
+                    splashColor: Colors.transparent,
+                    highlightColor: Colors.transparent,
+                    onTap: () {
+                      // signaling?.toggleMicrophone(!isOnMic);
+                      // setState(() {
+                      //   isOnMic = !isOnMic;
+                      // });
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Color(0xFFEBEBEB),
+                          boxShadow: const [ColorConfig.boxShadow2]
+                      ),
+                      padding: EdgeInsets.all(9),
+                      child: Icon(isOnCam ? Icons.videocam : Icons.videocam_off),
+                    ),
+                  ),
+                  const ZSpace(w: 9),
+                  InkWell(
+                    hoverColor: Colors.transparent,
+                    splashColor: Colors.transparent,
+                    highlightColor: Colors.transparent,
+                    onTap: (){
+                      signaling?.startScreenShare();
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Color(0xFFEBEBEB),
+                          boxShadow: const [ColorConfig.boxShadow2]
+                      ),
+                      padding: EdgeInsets.all(9),
+                      child: Icon(Icons.screen_share),
+                    ),
+                  ),
+                ],
+              ))
+        ],
       ),
     );
   }
@@ -457,11 +570,12 @@ class MeetLayout extends StatelessWidget {
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  name,
+                  name.startsWith('screen_') ? 'Screen Share from: $name' : name,
                   style: const TextStyle(color: Colors.white, fontSize: 14),
                 ),
               ),
             ),
+
           ],
         ),
       ),
