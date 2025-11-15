@@ -20,7 +20,7 @@ class OverviewSideBar extends StatelessWidget {
         child: ListView(children: [
           ...cubit.listScopeUser.map(
             (scope) => MenuItem(
-                icon: 'assets/images/icons/issue_tab/ic_scope.png',
+                icon: 'assets/images/icons/ic_scope.png',
                 title: scope.title,
                 tab: scope.id,
                 curTab: curTab,

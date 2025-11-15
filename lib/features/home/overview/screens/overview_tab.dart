@@ -1,3 +1,4 @@
+import 'package:whms/configs/color_config.dart';
 import 'package:whms/configs/config_cubit.dart';
 import 'package:whms/features/home/overview/blocs/overview_tab_cubit.dart';
 import 'package:flutter/material.dart';
@@ -17,15 +18,10 @@ class OverviewTab extends StatelessWidget {
     return Material(
       child: Stack(
         children: [
-          SizedBox(
+          Container(
             height: double.infinity,
             width: double.infinity,
-            child: Image.asset(
-              'assets/images/background.png',
-              fit: BoxFit.fill,
-              height: double.infinity,
-              width: double.infinity,
-            ),
+            color: ColorConfig.primary3,
           ),
           BlocProvider(
             create: (context) => OverviewTabCubit(ConfigsCubit.fromContext(context))..initData(context),

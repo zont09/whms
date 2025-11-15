@@ -55,7 +55,7 @@ class _OverviewMainViewState extends State<OverviewMainView> {
                     child: OverviewDataView(cubit: widget.cubit,)
                   ),
                 )),
-            Expanded(flex: 10, child: OtherInfoView(cubit: widget.cubit))
+            // Expanded(flex: 10, child: OtherInfoView(cubit: widget.cubit))
           ],
         ));
   }
