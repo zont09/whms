@@ -1,10 +1,11 @@
-// pubspec.yaml dependencies cần thêm:
+// pubspec.yaml dependencies:
 // dependencies:
 //   flutter:
 //     sdk: flutter
 //   web_socket_channel: ^2.4.0
 //   http: ^1.1.0
 //   file_picker: ^6.1.1
+//   cached_network_image: ^3.3.0
 
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -12,9 +13,19 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
 import 'package:file_picker/file_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 void main() {
   runApp(const MyApp());
+}
+
+// Theme Colors
+class AppColors {
+  static const Color primary1 = Color(0xFF0448db);
+  static const Color primary2 = Color(0xFF006df5);
+  static const Color primary3 = Color(0xFF0086f3);
+  static const Color primary4 = Color(0xFF0099d8);
+  static const Color primary5 = Color(0xFFabc5ff);
 }
 
 class MyApp extends StatelessWidget {
@@ -26,7 +37,11 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Chat Widget',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primaryColor: AppColors.primary2,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.primary2,
+          primary: AppColors.primary2,
+        ),
         useMaterial3: true,
       ),
       home: const ChatDemo(),
@@ -51,100 +66,161 @@ class _ChatDemoState extends State<ChatDemo> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFFEFF6FF), Color(0xFFE0E7FF)],
+            colors: [
+              AppColors.primary5.withOpacity(0.2),
+              AppColors.primary4.withOpacity(0.1),
+            ],
           ),
         ),
         child: Center(
           child: Container(
-            constraints: const BoxConstraints(maxWidth: 600),
+            constraints: const BoxConstraints(maxWidth: 650),
             margin: const EdgeInsets.all(32),
             child: Card(
-              elevation: 8,
+              elevation: 12,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: Padding(
-                padding: const EdgeInsets.all(32),
+                padding: const EdgeInsets.all(40),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text(
-                      'Flutter Chat Widget Demo',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [AppColors.primary2, AppColors.primary3],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.chat_bubble_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Flutter Chat Widget',
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'Real-time messaging platform',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 32),
-                    TextField(
+                    _buildTextField(
                       controller: apiUrlController,
-                      decoration: const InputDecoration(
-                        labelText: 'API Base URL',
-                        border: OutlineInputBorder(),
-                        hintText: 'http://localhost:8000',
-                      ),
+                      label: 'API Base URL',
+                      icon: Icons.link,
+                      hint: 'http://localhost:8000',
                     ),
                     const SizedBox(height: 16),
-                    TextField(
+                    _buildTextField(
                       controller: userIdController,
-                      decoration: const InputDecoration(
-                        labelText: 'User ID',
-                        border: OutlineInputBorder(),
-                        hintText: 'user_123',
-                      ),
+                      label: 'User ID',
+                      icon: Icons.person,
+                      hint: 'user_123',
                     ),
                     const SizedBox(height: 16),
-                    TextField(
+                    _buildTextField(
                       controller: conversationIdController,
-                      decoration: const InputDecoration(
-                        labelText: 'Conversation ID',
-                        border: OutlineInputBorder(),
-                        hintText: 'conv_001',
-                      ),
+                      label: 'Conversation ID',
+                      icon: Icons.chat,
+                      hint: 'conv_001',
                     ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          showChat = !showChat;
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                    const SizedBox(height: 28),
+                    Container(
+                      height: 56,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [AppColors.primary2, AppColors.primary3],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary2.withOpacity(0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        showChat ? 'Ẩn Chat Widget' : 'Hiện Chat Widget',
-                        style: const TextStyle(fontSize: 16),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () {
+                            setState(() {
+                              showChat = !showChat;
+                            });
+                          },
+                          child: Center(
+                            child: Text(
+                              showChat ? 'Ẩn Chat Widget' : 'Mở Chat Widget',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 24),
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
+                        color: AppColors.primary5.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.primary5.withOpacity(0.3),
+                        ),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Hướng dẫn:',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                          Row(
+                            children: [
+                              Icon(Icons.info_outline,
+                                  size: 18, color: AppColors.primary2),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Tính năng',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            '• Nhập API URL của backend\n'
-                                '• Nhập User ID và Conversation ID\n'
-                                '• Click "Hiện Chat Widget"\n'
-                                '• Widget xuất hiện góc dưới phải\n'
-                                '• Hỗ trợ real-time chat & upload file',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[700],
-                            ),
-                          ),
+                          const SizedBox(height: 12),
+                          _buildFeatureItem('✨ Real-time chat với WebSocket'),
+                          _buildFeatureItem('🖼️ Hiển thị & zoom ảnh'),
+                          _buildFeatureItem('💬 Reply tin nhắn'),
+                          _buildFeatureItem('📎 Upload & download file'),
+                          _buildFeatureItem('🎨 UI hiện đại, mượt mà'),
                         ],
                       ),
                     ),
@@ -169,6 +245,46 @@ class _ChatDemoState extends State<ChatDemo> {
           : null,
     );
   }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required String hint,
+  }) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, color: AppColors.primary3),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary2, width: 2),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFeatureItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 13,
+          color: Colors.grey[700],
+        ),
+      ),
+    );
+  }
 }
 
 class ChatWidget extends StatefulWidget {
@@ -189,17 +305,32 @@ class ChatWidget extends StatefulWidget {
   State<ChatWidget> createState() => _ChatWidgetState();
 }
 
-class _ChatWidgetState extends State<ChatWidget> {
+class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
   final List<ChatMessage> messages = [];
   final messageController = TextEditingController();
   final scrollController = ScrollController();
   WebSocketChannel? channel;
   bool isConnected = false;
   bool isMinimized = false;
+  ChatMessage? replyingTo;
+  late AnimationController _slideController;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
     super.initState();
+    _slideController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 1),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _slideController,
+      curve: Curves.easeOutCubic,
+    ));
+    _slideController.forward();
     loadMessages();
     connectWebSocket();
   }
@@ -209,12 +340,14 @@ class _ChatWidgetState extends State<ChatWidget> {
     channel?.sink.close();
     messageController.dispose();
     scrollController.dispose();
+    _slideController.dispose();
     super.dispose();
   }
 
   Future<void> loadMessages() async {
     try {
-      final url = '${widget.apiBaseUrl}/chats/${widget.conversationId}/messages?limit=50';
+      final url =
+          '${widget.apiBaseUrl}/chats/${widget.conversationId}/messages?limit=50';
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
@@ -237,7 +370,8 @@ class _ChatWidgetState extends State<ChatWidget> {
   void connectWebSocket() {
     try {
       final wsUrl = widget.apiBaseUrl.replaceFirst('http', 'ws');
-      final uri = Uri.parse('$wsUrl/ws/chat/${widget.conversationId}/${widget.userId}');
+      final uri = Uri.parse(
+          '$wsUrl/ws/chat/${widget.conversationId}/${widget.userId}');
 
       channel = WebSocketChannel.connect(uri);
 
@@ -303,22 +437,30 @@ class _ChatWidgetState extends State<ChatWidget> {
       'sender_id': widget.userId,
       'content': messageController.text.trim(),
       'attachments': [],
+      if (replyingTo != null) 'reply_to': replyingTo!.id,
     };
 
     channel!.sink.add(json.encode(messageData));
     messageController.clear();
+    setState(() {
+      replyingTo = null;
+    });
   }
 
   Future<void> uploadFile() async {
     try {
-      final result = await FilePicker.platform.pickFiles();
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.any,
+        withData: true,
+      );
 
       if (result != null && result.files.isNotEmpty) {
         final file = result.files.first;
 
         final request = http.MultipartRequest(
           'POST',
-          Uri.parse('${widget.apiBaseUrl}/chats/${widget.conversationId}/upload'),
+          Uri.parse(
+              '${widget.apiBaseUrl}/chats/${widget.conversationId}/upload'),
         );
 
         request.fields['sender_id'] = widget.userId;
@@ -333,10 +475,11 @@ class _ChatWidgetState extends State<ChatWidget> {
         final data = json.decode(responseData);
 
         if (data['ok'] == true && channel != null) {
+          final isImage = _isImageFile(data['mime']);
           final messageData = {
             'type': 'message',
             'sender_id': widget.userId,
-            'content': '📎 ${data['filename']}',
+            'content': isImage ? '' : '📎 ${data['filename']}',
             'attachments': [
               {
                 'file_id': data['file_id'],
@@ -345,8 +488,12 @@ class _ChatWidgetState extends State<ChatWidget> {
                 'url': data['url'],
               }
             ],
+            if (replyingTo != null) 'reply_to': replyingTo!.id,
           };
           channel!.sink.add(json.encode(messageData));
+          setState(() {
+            replyingTo = null;
+          });
         }
       }
     } catch (e) {
@@ -354,218 +501,659 @@ class _ChatWidgetState extends State<ChatWidget> {
     }
   }
 
+  bool _isImageFile(String? mime) {
+    if (mime == null) return false;
+    return mime.startsWith('image/');
+  }
+
+  void _showImageDialog(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Stack(
+          children: [
+            Center(
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: CachedNetworkImage(
+                  imageUrl: '${widget.apiBaseUrl}$imageUrl',
+                  placeholder: (context, url) =>
+                  const CircularProgressIndicator(),
+                  errorWidget: (context, url, error) =>
+                  const Icon(Icons.error),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 16,
+              right: 16,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white, size: 30),
+                onPressed: () => Navigator.pop(context),
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.black54,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isMinimized) {
       return Positioned(
-        bottom: 16,
-        right: 16,
-        child: FloatingActionButton(
-          onPressed: () {
-            setState(() {
-              isMinimized = false;
-            });
-          },
-          child: const Icon(Icons.chat),
+        bottom: 20,
+        right: 20,
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [AppColors.primary2, AppColors.primary3],
+            ),
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary2.withOpacity(0.4),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(30),
+              onTap: () {
+                setState(() {
+                  isMinimized = false;
+                });
+                _slideController.forward();
+              },
+              child: const Padding(
+                padding: EdgeInsets.all(18),
+                child: Icon(Icons.chat_bubble_rounded,
+                    color: Colors.white, size: 28),
+              ),
+            ),
+          ),
         ),
       );
     }
 
-    return Positioned(
-      bottom: 16,
-      right: 16,
-      child: Material(
-        elevation: 8,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          width: 380,
-          height: 600,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey[300]!),
+    return SlideTransition(
+      position: _slideAnimation,
+      child: Positioned(
+        bottom: 20,
+        right: 20,
+        child: Material(
+          elevation: 20,
+          borderRadius: BorderRadius.circular(20),
+          shadowColor: AppColors.primary2.withOpacity(0.3),
+          child: Container(
+            width: 420,
+            height: 650,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: AppColors.primary5.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              children: [
+                _buildHeader(),
+                Expanded(child: _buildMessagesList()),
+                if (replyingTo != null) _buildReplyPreview(),
+                _buildInputArea(),
+              ],
+            ),
           ),
-          child: Column(
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AppColors.primary2, AppColors.primary3],
+        ),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary2.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.chat_bubble_rounded,
+                color: Colors.white, size: 22),
+          ),
+          const SizedBox(width: 12),
+          const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: const BoxDecoration(
-                  color: Colors.blue,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(12),
-                    topRight: Radius.circular(12),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.chat, color: Colors.white, size: 20),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Chat',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: isConnected ? Colors.green : Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.minimize, color: Colors.white),
-                      onPressed: () {
-                        setState(() {
-                          isMinimized = true;
-                        });
-                      },
-                      iconSize: 20,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
-                      onPressed: widget.onClose,
-                      iconSize: 20,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Messages
-              Expanded(
-                child: Container(
-                  color: Colors.grey[50],
-                  child: ListView.builder(
-                    controller: scrollController,
-                    padding: const EdgeInsets.all(16),
-                    itemCount: messages.length,
-                    itemBuilder: (context, index) {
-                      final msg = messages[index];
-                      final isOwn = msg.senderId == widget.userId;
-
-                      return Align(
-                        alignment: isOwn ? Alignment.centerRight : Alignment.centerLeft,
-                        child: Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          constraints: const BoxConstraints(maxWidth: 280),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: isOwn ? Colors.blue : Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: isOwn ? null : Border.all(color: Colors.grey[300]!),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (!isOwn)
-                                Text(
-                                  msg.senderId,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              if (!isOwn) const SizedBox(height: 4),
-                              Text(
-                                msg.content,
-                                style: TextStyle(
-                                  color: isOwn ? Colors.white : Colors.black87,
-                                ),
-                              ),
-                              if (msg.attachments.isNotEmpty) ...[
-                                const SizedBox(height: 8),
-                                ...msg.attachments.map((att) => Text(
-                                  att['filename'] ?? '',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    decoration: TextDecoration.underline,
-                                    color: isOwn ? Colors.white : Colors.blue,
-                                  ),
-                                )),
-                              ],
-                              const SizedBox(height: 4),
-                              Text(
-                                _formatTime(msg.createdAt),
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: isOwn ? Colors.white70 : Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-
-              // Input
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
+              Text(
+                'Chat Room',
+                style: TextStyle(
                   color: Colors.white,
-                  border: Border(top: BorderSide(color: Colors.grey[300]!)),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
                 ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.attach_file),
-                          onPressed: uploadFile,
-                          color: Colors.grey[600],
-                        ),
-                        Expanded(
-                          child: TextField(
-                            controller: messageController,
-                            decoration: const InputDecoration(
-                              hintText: 'Nhập tin nhắn...',
-                              border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                            ),
-                            onSubmitted: (_) => sendMessage(),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.send),
-                          onPressed: sendMessage,
-                          color: Colors.blue,
-                        ),
-                      ],
-                    ),
-                    if (!isConnected)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 4),
-                        child: Text(
-                          'Đang kết nối lại...',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.red,
-                          ),
-                        ),
-                      ),
-                  ],
+              ),
+              SizedBox(height: 2),
+              Text(
+                'Real-time messaging',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
                 ),
               ),
             ],
           ),
+          const SizedBox(width: 8),
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: isConnected ? Colors.greenAccent : Colors.redAccent,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: (isConnected ? Colors.greenAccent : Colors.redAccent)
+                      .withOpacity(0.5),
+                  blurRadius: 8,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(Icons.remove, color: Colors.white, size: 22),
+            onPressed: () {
+              setState(() {
+                isMinimized = true;
+              });
+            },
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+          const SizedBox(width: 12),
+          IconButton(
+            icon: const Icon(Icons.close, color: Colors.white, size: 22),
+            onPressed: widget.onClose,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessagesList() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppColors.primary5.withOpacity(0.05),
+            Colors.white,
+          ],
         ),
+      ),
+      child: ListView.builder(
+        controller: scrollController,
+        padding: const EdgeInsets.all(16),
+        itemCount: messages.length,
+        itemBuilder: (context, index) {
+          final msg = messages[index];
+          final isOwn = msg.senderId == widget.userId;
+          final showAvatar = index == 0 ||
+              messages[index - 1].senderId != msg.senderId;
+
+          return _buildMessageBubble(msg, isOwn, showAvatar);
+        },
+      ),
+    );
+  }
+
+  Widget _buildMessageBubble(ChatMessage msg, bool isOwn, bool showAvatar) {
+    final hasImage = msg.attachments.any(
+            (att) => att['mime'] != null && _isImageFile(att['mime']));
+
+    return Align(
+      alignment: isOwn ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: EdgeInsets.only(
+          bottom: 8,
+          left: isOwn ? 60 : 0,
+          right: isOwn ? 0 : 60,
+        ),
+        child: Row(
+          mainAxisAlignment:
+          isOwn ? MainAxisAlignment.end : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            if (!isOwn && showAvatar)
+              Container(
+                margin: const EdgeInsets.only(right: 8, bottom: 4),
+                child: CircleAvatar(
+                  radius: 16,
+                  backgroundColor: AppColors.primary5,
+                  child: Text(
+                    msg.senderId[0].toUpperCase(),
+                    style: const TextStyle(
+                      color: AppColors.primary2,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              )
+            else if (!isOwn)
+              const SizedBox(width: 40),
+            Flexible(
+              child: GestureDetector(
+                onLongPress: () {
+                  setState(() {
+                    replyingTo = msg;
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: isOwn
+                        ? const LinearGradient(
+                      colors: [AppColors.primary2, AppColors.primary3],
+                    )
+                        : null,
+                    color: isOwn ? null : Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(16),
+                      topRight: const Radius.circular(16),
+                      bottomLeft: Radius.circular(isOwn ? 16 : 4),
+                      bottomRight: Radius.circular(isOwn ? 4 : 16),
+                    ),
+                    border: isOwn
+                        ? null
+                        : Border.all(color: AppColors.primary5.withOpacity(0.3)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: isOwn
+                            ? AppColors.primary2.withOpacity(0.2)
+                            : Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (!isOwn)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Text(
+                            msg.senderId,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary2,
+                            ),
+                          ),
+                        ),
+                      if (msg.replyTo != null) _buildReplyIndicator(msg),
+                      if (msg.content.isNotEmpty)
+                        Text(
+                          msg.content,
+                          style: TextStyle(
+                            color: isOwn ? Colors.white : Colors.black87,
+                            fontSize: 14,
+                            height: 1.4,
+                          ),
+                        ),
+                      if (msg.attachments.isNotEmpty) ...[
+                        if (msg.content.isNotEmpty) const SizedBox(height: 8),
+                        ...msg.attachments.map((att) {
+                          if (_isImageFile(att['mime'])) {
+                            return GestureDetector(
+                              onTap: () => _showImageDialog(att['url']),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: CachedNetworkImage(
+                                  imageUrl: '${widget.apiBaseUrl}${att['url']}',
+                                  width: 250,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => Container(
+                                    width: 250,
+                                    height: 150,
+                                    color: Colors.grey[300],
+                                    child: const Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  ),
+                                  errorWidget: (context, url, error) =>
+                                  const Icon(Icons.error),
+                                ),
+                              ),
+                            );
+                          } else {
+                            return Container(
+                              margin: const EdgeInsets.only(top: 4),
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: isOwn
+                                    ? Colors.white.withOpacity(0.2)
+                                    : AppColors.primary5.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.insert_drive_file,
+                                    size: 16,
+                                    color:
+                                    isOwn ? Colors.white : AppColors.primary2,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      att['filename'] ?? 'File',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: isOwn
+                                            ? Colors.white
+                                            : AppColors.primary2,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                        }).toList(),
+                      ],
+                      const SizedBox(height: 4),
+                      Text(
+                        _formatTime(msg.createdAt),
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: isOwn ? Colors.white70 : Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReplyIndicator(ChatMessage msg) {
+    final replyMsg = messages.firstWhere(
+          (m) => m.id == msg.replyTo,
+      orElse: () => ChatMessage(
+        id: '',
+        conversationId: '',
+        senderId: '',
+        content: 'Message not found',
+        attachments: [],
+        createdAt: '',
+      ),
+    );
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(8),
+        border: Border(
+          left: BorderSide(color: Colors.white.withOpacity(0.5), width: 3),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            replyMsg.senderId,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: Colors.white70,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            replyMsg.content,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 11,
+              color: Colors.white70,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReplyPreview() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.primary5.withOpacity(0.1),
+        border: Border(
+          top: BorderSide(color: AppColors.primary5.withOpacity(0.3)),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 3,
+            height: 40,
+            color: AppColors.primary2,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Reply to ${replyingTo!.senderId}',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary2,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  replyingTo!.content,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[700],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, size: 20),
+            onPressed: () {
+              setState(() {
+                replyingTo = null;
+              });
+            },
+            color: Colors.grey[600],
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputArea() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: Colors.grey[200]!),
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary5.withOpacity(0.3),
+                      AppColors.primary5.withOpacity(0.1),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: uploadFile,
+                    child: const Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Icon(
+                        Icons.attach_file_rounded,
+                        color: AppColors.primary2,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.primary5.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.primary5.withOpacity(0.3),
+                    ),
+                  ),
+                  child: TextField(
+                    controller: messageController,
+                    decoration: const InputDecoration(
+                      hintText: 'Nhập tin nhắn...',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      hintStyle: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    onSubmitted: (_) => sendMessage(),
+                    maxLines: null,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [AppColors.primary2, AppColors.primary3],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary2.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: sendMessage,
+                    child: const Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Icon(
+                        Icons.send_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (!isConnected)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      color: Colors.orange,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Text(
+                    'Đang kết nối lại...',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.orange,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -573,7 +1161,14 @@ class _ChatWidgetState extends State<ChatWidget> {
   String _formatTime(String timestamp) {
     try {
       final date = DateTime.parse(timestamp);
-      return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+      final now = DateTime.now();
+      final diff = now.difference(date);
+
+      if (diff.inDays > 0) {
+        return '${date.day}/${date.month} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+      } else {
+        return '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+      }
     } catch (e) {
       return '';
     }
@@ -587,6 +1182,7 @@ class ChatMessage {
   final String content;
   final List<dynamic> attachments;
   final String createdAt;
+  final String? replyTo;
 
   ChatMessage({
     required this.id,
@@ -595,6 +1191,7 @@ class ChatMessage {
     required this.content,
     required this.attachments,
     required this.createdAt,
+    this.replyTo,
   });
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
@@ -605,6 +1202,7 @@ class ChatMessage {
       content: json['content'] ?? '',
       attachments: json['attachments'] ?? [],
       createdAt: json['created_at'] ?? '',
+      replyTo: json['reply_to'],
     );
   }
 }
