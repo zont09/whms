@@ -7,6 +7,20 @@
 //   file_picker: ^6.1.1
 //   cached_network_image: ^3.3.0
 //   video_player: ^2.8.0
+//
+// final userIdController = TextEditingController(text: 'think');
+// final conversationIdController = TextEditingController(text: 'g1');
+// final apiUrlController = TextEditingController(text: 'http://127.0.0.1:8000/api');
+// pubspec.yaml dependencies:
+// dependencies:
+//   flutter:
+//     sdk: flutter
+//   web_socket_channel: ^2.4.0
+//   http: ^1.1.0
+//   file_picker: ^6.1.1
+//   cached_network_image: ^3.3.0
+//   video_player: ^2.8.0
+//   url_launcher: ^6.2.0
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -17,6 +31,7 @@ import 'dart:async';
 import 'package:file_picker/file_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:video_player/video_player.dart';
+import 'dart:html' as html; // For web download
 
 void main() {
   runApp(const MyApp());
@@ -1239,10 +1254,19 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
               ),
             ),
             const SizedBox(width: 8),
-            Icon(
-              Icons.download_rounded,
-              size: 18,
-              color: isOwn ? Colors.white : AppColors.primary2,
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: isOwn
+                    ? Colors.white.withOpacity(0.2)
+                    : AppColors.primary2.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Icon(
+                Icons.download_rounded,
+                size: 16,
+                color: isOwn ? Colors.white : AppColors.primary2,
+              ),
             ),
           ],
         ),
@@ -1253,17 +1277,16 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
   Future<void> _downloadFile(Map<String, dynamic> att) async {
     try {
       final url = '${widget.apiBaseUrl}${att['url']}';
+      final filename = att['filename'] ?? 'download';
+
       print('Downloading file from: $url');
 
-      // You can implement download here
-      // For web, you can open in new tab or use html package
-      // For mobile, you can use path_provider and save to device
+      // For web: trigger download using anchor element
+      html.AnchorElement anchorElement = html.AnchorElement(href: url);
+      anchorElement.download = filename;
+      anchorElement.click();
 
-      // Simple approach: open in browser
-      // import 'dart:html' as html; // For web
-      // html.window.open(url, '_blank');
-
-      print('File download initiated: ${att['filename']}');
+      print('File download initiated: $filename');
     } catch (e) {
       print('Error downloading file: $e');
     }
@@ -1492,53 +1515,42 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: RawKeyboardListener(
-                  focusNode: FocusNode(),
-                  onKey: (RawKeyEvent event) {
-                    if (event is RawKeyDownEvent) {
-                      final isShiftPressed = event.isShiftPressed;
-                      final isEnterPressed =
-                          event.logicalKey == LogicalKeyboardKey.enter;
-
-                      if (isEnterPressed && !isShiftPressed) {
-                        if (messageController.text.trim().isNotEmpty) {
-                          sendMessage();
-                        }
+                child: Container(
+                  constraints: const BoxConstraints(maxHeight: 120),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary5.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.primary5.withOpacity(0.3),
+                    ),
+                  ),
+                  child: TextField(
+                    controller: messageController,
+                    focusNode: _focusNode,
+                    decoration: const InputDecoration(
+                      hintText: 'Nhập tin nhắn... (Enter: gửi, Shift+Enter: xuống hàng)',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      hintStyle: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    maxLines: null,
+                    keyboardType: TextInputType.multiline,
+                    textInputAction: TextInputAction.newline,
+                    onSubmitted: (value) {
+                      // Enter pressed
+                      if (value.trim().isNotEmpty) {
+                        sendMessage();
                       }
-                    }
-                  },
-                  child: Container(
-                    constraints: const BoxConstraints(maxHeight: 120),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary5.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: AppColors.primary5.withOpacity(0.3),
-                      ),
-                    ),
-                    child: TextField(
-                      controller: messageController,
-                      focusNode: _focusNode,
-                      decoration: const InputDecoration(
-                        hintText:
-                        'Nhập tin nhắn... (Enter: gửi, Shift+Enter: xuống hàng)',
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        hintStyle: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      maxLines: null,
-                      keyboardType: TextInputType.multiline,
-                      textInputAction: TextInputAction.newline,
-                      onChanged: (value) {
-                        setState(() {});
-                      },
-                    ),
+                    },
+                    onChanged: (value) {
+                      setState(() {});
+                    },
                   ),
                 ),
               ),
