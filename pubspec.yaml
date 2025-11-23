@@ -79,6 +79,7 @@ dependencies:
   web_socket_channel: ^3.0.3
   speech_to_text: ^6.6.0
   cached_network_image: ^3.4.1
+  image: ^4.5.4
 
 dev_dependencies:
   flutter_test:
