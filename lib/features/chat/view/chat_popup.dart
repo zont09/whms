@@ -7,8 +7,6 @@
 //   file_picker: ^6.1.1
 //   cached_network_image: ^3.3.0
 //   video_player: ^2.8.0
-//   video_thumbnail: ^0.5.3
-//   image: ^4.0.17
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,17 +14,14 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
-import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:video_player/video_player.dart';
-import 'package:image/image.dart' as img;
 
 void main() {
   runApp(const MyApp());
 }
 
-// Theme Colors
 class AppColors {
   static const Color primary1 = Color(0xFF0448db);
   static const Color primary2 = Color(0xFF006df5);
@@ -64,9 +59,9 @@ class ChatDemo extends StatefulWidget {
 }
 
 class _ChatDemoState extends State<ChatDemo> {
-  final userIdController = TextEditingController(text: 'user_123');
-  final conversationIdController = TextEditingController(text: 'conv_001');
-  final apiUrlController = TextEditingController(text: 'http://localhost:8000');
+  final userIdController = TextEditingController(text: 'think');
+  final conversationIdController = TextEditingController(text: 'g1');
+  final apiUrlController = TextEditingController(text: 'http://127.0.0.1:8000/api');
   bool showChat = false;
 
   @override
@@ -224,8 +219,8 @@ class _ChatDemoState extends State<ChatDemo> {
                           ),
                           const SizedBox(height: 12),
                           _buildFeatureItem('✨ Real-time chat với WebSocket'),
-                          _buildFeatureItem('🖼️ Preview & zoom ảnh'),
-                          _buildFeatureItem('🎥 Thumbnail & play video'),
+                          _buildFeatureItem('🖼️ Hiển thị ảnh như Messenger'),
+                          _buildFeatureItem('🎥 Preview & play video'),
                           _buildFeatureItem('💬 Reply tin nhắn'),
                           _buildFeatureItem('📎 Upload & download file'),
                           _buildFeatureItem('🎨 UI hiện đại, mượt mà'),
@@ -325,12 +320,6 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
   String? hoveredMessageId;
   late AnimationController _slideController;
   late Animation<Offset> _slideAnimation;
-
-  // Preview state
-  PlatformFile? _previewFile;
-  Uint8List? _previewImageData;
-  String? _previewVideoThumbnail;
-  bool _isGeneratingPreview = false;
 
   @override
   void initState() {
@@ -464,26 +453,9 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
     });
   }
 
-  Future<Uint8List?> _generateImageThumbnail(Uint8List imageBytes) async {
+  Future<void> uploadFile() async {
     try {
-      final image = img.decodeImage(imageBytes);
-      if (image == null) return null;
-
-      // Resize to max 300px width while maintaining aspect ratio
-      final thumbnail = img.copyResize(
-        image,
-        width: image.width > 300 ? 300 : image.width,
-      );
-
-      return Uint8List.fromList(img.encodeJpg(thumbnail, quality: 85));
-    } catch (e) {
-      print('Error generating thumbnail: $e');
-      return null;
-    }
-  }
-
-  Future<void> pickFile() async {
-    try {
+      print('=== Starting file upload ===');
       final result = await FilePicker.platform.pickFiles(
         type: FileType.any,
         withData: true,
@@ -491,116 +463,72 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
 
       if (result != null && result.files.isNotEmpty) {
         final file = result.files.first;
+        print('File selected: ${file.name}, size: ${file.size} bytes');
 
-        setState(() {
-          _previewFile = file;
-          _isGeneratingPreview = true;
-          _previewImageData = null;
-          _previewVideoThumbnail = null;
-        });
+        final request = http.MultipartRequest(
+          'POST',
+          Uri.parse(
+              '${widget.apiBaseUrl}/chats/${widget.conversationId}/upload'),
+        );
 
-        // Generate preview based on file type
-        if (_isImageFile(file.extension)) {
-          final thumbnail = await _generateImageThumbnail(file.bytes!);
+        request.fields['sender_id'] = widget.userId;
+        request.files.add(http.MultipartFile.fromBytes(
+          'file',
+          file.bytes!,
+          filename: file.name,
+        ));
+
+        print('Sending upload request to: ${widget.apiBaseUrl}/chats/${widget.conversationId}/upload');
+        final response = await request.send();
+        final responseData = await response.stream.bytesToString();
+        print('Upload response: $responseData');
+
+        final data = json.decode(responseData);
+
+        if (data['ok'] == true && channel != null) {
+          print('Upload successful! File ID: ${data['file_id']}, URL: ${data['url']}');
+
+          // Với ảnh và video: không cần content text
+          // Với file khác: hiển thị tên file
+          final isMedia = _isImageFile(data['mime']) || _isVideoFile(data['mime']);
+
+          final messageData = {
+            'type': 'message',
+            'sender_id': widget.userId,
+            'content': isMedia ? '' : '📎 ${data['filename']}',
+            'attachments': [
+              {
+                'file_id': data['file_id'],
+                'filename': data['filename'],
+                'mime': data['mime'],
+                'url': data['url'],
+              }
+            ],
+            if (replyingTo != null) 'reply_to': replyingTo!.id,
+          };
+
+          print('Sending message with attachment: ${json.encode(messageData)}');
+          channel!.sink.add(json.encode(messageData));
           setState(() {
-            _previewImageData = thumbnail ?? file.bytes;
-            _isGeneratingPreview = false;
-          });
-        } else if (_isVideoFile(file.extension)) {
-          // For video, just show a placeholder
-          setState(() {
-            _isGeneratingPreview = false;
+            replyingTo = null;
           });
         } else {
-          setState(() {
-            _isGeneratingPreview = false;
-          });
+          print('Upload failed or WebSocket not connected');
         }
       }
     } catch (e) {
-      print('Error picking file: $e');
-      setState(() {
-        _isGeneratingPreview = false;
-      });
-    }
-  }
-
-  void _cancelPreview() {
-    setState(() {
-      _previewFile = null;
-      _previewImageData = null;
-      _previewVideoThumbnail = null;
-      _isGeneratingPreview = false;
-    });
-  }
-
-  Future<void> _sendFileWithPreview() async {
-    if (_previewFile == null || channel == null) return;
-
-    setState(() {
-      _isGeneratingPreview = true;
-    });
-
-    try {
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse(
-            '${widget.apiBaseUrl}/chats/${widget.conversationId}/upload'),
-      );
-
-      request.fields['sender_id'] = widget.userId;
-      request.files.add(http.MultipartFile.fromBytes(
-        'file',
-        _previewFile!.bytes!,
-        filename: _previewFile!.name,
-      ));
-
-      final response = await request.send();
-      final responseData = await response.stream.bytesToString();
-      final data = json.decode(responseData);
-
-      if (data['ok'] == true) {
-        final isImage = _isImageFile(_previewFile!.extension);
-        final messageData = {
-          'type': 'message',
-          'sender_id': widget.userId,
-          'content': isImage ? '' : '📎 ${data['filename']}',
-          'attachments': [
-            {
-              'file_id': data['file_id'],
-              'filename': data['filename'],
-              'mime': data['mime'],
-              'url': data['url'],
-            }
-          ],
-          if (replyingTo != null) 'reply_to': replyingTo!.id,
-        };
-        channel!.sink.add(json.encode(messageData));
-
-        setState(() {
-          replyingTo = null;
-          _previewFile = null;
-          _previewImageData = null;
-          _previewVideoThumbnail = null;
-          _isGeneratingPreview = false;
-        });
-      }
-    } catch (e) {
       print('Error uploading file: $e');
-      setState(() {
-        _isGeneratingPreview = false;
-      });
     }
   }
 
-  bool _isImageFile(String? ext) {
-    if (ext == null) return false;
-    return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].contains(ext.toLowerCase());
+  bool _isImageFile(String? mime) {
+    if (mime == null) return false;
+    return mime.startsWith('image/');
   }
 
-  bool _isVideoFile(String? ext) {
-    if (ext == null) return false;
-    return ['mp4', 'mov', 'avi', 'mkv', 'webm', 'flv'].contains(ext.toLowerCase());
+  bool _isVideoFile(String? mime) {
+    if (mime == null) return false;
+    return mime.startsWith('video/');
   }
 
   void _showImageDialog(String imageUrl) {
@@ -706,7 +634,6 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                 _buildHeader(),
                 Expanded(child: _buildMessagesList()),
                 if (replyingTo != null) _buildReplyPreview(),
-                if (_previewFile != null) _buildFilePreview(),
                 _buildInputArea(),
               ],
             ),
@@ -837,6 +764,27 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
   }
 
   Widget _buildMessageBubble(ChatMessage msg, bool isOwn, bool showAvatar) {
+    // Debug: print attachment info
+    if (msg.attachments.isNotEmpty) {
+      print('Message ${msg.id} attachments:');
+      for (var att in msg.attachments) {
+        print('  - filename: ${att['filename']}, mime: ${att['mime']}, url: ${att['url']}');
+      }
+    }
+
+    // Check if message has only media (images/videos)
+    final hasOnlyMedia = msg.content.isEmpty &&
+        msg.attachments.isNotEmpty &&
+        msg.attachments.every((att) {
+          final mime = att['mime'] as String?;
+          final isMedia = mime != null &&
+              (mime.startsWith('image/') || mime.startsWith('video/'));
+          print('  Attachment mime=$mime, isMedia=$isMedia');
+          return isMedia;
+        });
+
+    print('Message ${msg.id}: hasOnlyMedia=$hasOnlyMedia');
+
     return MouseRegion(
       onEnter: (_) {
         setState(() {
@@ -859,7 +807,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
           child: Row(
             mainAxisAlignment:
             isOwn ? MainAxisAlignment.end : MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               if (isOwn && hoveredMessageId == msg.id)
                 _buildFloatingReplyButton(msg, isOwn)
@@ -868,7 +816,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
 
               if (!isOwn && showAvatar)
                 Container(
-                  margin: const EdgeInsets.only(right: 8),
+                  margin: const EdgeInsets.only(right: 8, bottom: 4),
                   child: CircleAvatar(
                     radius: 16,
                     backgroundColor: AppColors.primary5,
@@ -886,82 +834,117 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                 const SizedBox(width: 40),
 
               Flexible(
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    gradient: isOwn
-                        ? const LinearGradient(
-                      colors: [AppColors.primary2, AppColors.primary3],
-                    )
-                        : null,
-                    color: isOwn ? null : Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(16),
-                      topRight: const Radius.circular(16),
-                      bottomLeft: Radius.circular(isOwn ? 16 : 4),
-                      bottomRight: Radius.circular(isOwn ? 4 : 16),
-                    ),
-                    border: isOwn
-                        ? null
-                        : Border.all(color: AppColors.primary5.withOpacity(0.3)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: isOwn
-                            ? AppColors.primary2.withOpacity(0.2)
-                            : Colors.black.withOpacity(0.05),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (!isOwn)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: Text(
-                            msg.senderId,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary2,
+                child: Column(
+                  crossAxisAlignment:
+                  isOwn ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  children: [
+                    // Chỉ hiển thị bubble khi có text hoặc file không phải media
+                    if (msg.content.isNotEmpty || !hasOnlyMedia)
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          gradient: isOwn
+                              ? const LinearGradient(
+                            colors: [AppColors.primary2, AppColors.primary3],
+                          )
+                              : null,
+                          color: isOwn ? null : Colors.white,
+                          borderRadius: BorderRadius.only(
+                            topLeft: const Radius.circular(16),
+                            topRight: const Radius.circular(16),
+                            bottomLeft: Radius.circular(isOwn ? 16 : 4),
+                            bottomRight: Radius.circular(isOwn ? 4 : 16),
+                          ),
+                          border: isOwn
+                              ? null
+                              : Border.all(
+                              color: AppColors.primary5.withOpacity(0.3)),
+                          boxShadow: [
+                            BoxShadow(
+                              color: isOwn
+                                  ? AppColors.primary2.withOpacity(0.2)
+                                  : Colors.black.withOpacity(0.05),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
                             ),
-                          ),
+                          ],
                         ),
-                      if (msg.replyTo != null) _buildReplyIndicator(msg, isOwn),
-                      if (msg.content.isNotEmpty)
-                        Text(
-                          msg.content,
-                          style: TextStyle(
-                            color: isOwn ? Colors.white : Colors.black87,
-                            fontSize: 14,
-                            height: 1.4,
-                          ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (!isOwn)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 6),
+                                child: Text(
+                                  msg.senderId,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary2,
+                                  ),
+                                ),
+                              ),
+                            if (msg.replyTo != null)
+                              _buildReplyIndicator(msg, isOwn),
+                            if (msg.content.isNotEmpty)
+                              Text(
+                                msg.content,
+                                style: TextStyle(
+                                  color: isOwn ? Colors.white : Colors.black87,
+                                  fontSize: 14,
+                                  height: 1.4,
+                                ),
+                              ),
+                            // File attachments (không phải ảnh/video)
+                            if (msg.attachments.isNotEmpty) ...[
+                              if (msg.content.isNotEmpty) const SizedBox(height: 8),
+                              ...msg.attachments.where((att) {
+                                final mime = att['mime'] as String?;
+                                return mime != null &&
+                                    !mime.startsWith('image/') &&
+                                    !mime.startsWith('video/');
+                              }).map((att) => _buildFileAttachment(att, isOwn)),
+                            ],
+                          ],
                         ),
-                      if (msg.attachments.isNotEmpty) ...[
-                        if (msg.content.isNotEmpty) const SizedBox(height: 8),
-                        ...msg.attachments.map((att) {
-                          final mime = att['mime'] as String?;
-                          if (mime != null && mime.startsWith('image/')) {
-                            return _buildImagePreview(att, isOwn);
-                          } else if (mime != null && mime.startsWith('video/')) {
-                            return _buildVideoPreview(att, isOwn);
-                          } else {
-                            return _buildFileAttachment(att, isOwn);
-                          }
-                        }).toList(),
-                      ],
-                      const SizedBox(height: 4),
-                      Text(
+                      ),
+                    // Ảnh và video hiển thị riêng, không trong bubble
+                    if (msg.attachments.isNotEmpty)
+                      ...msg.attachments.where((att) {
+                        final mime = att['mime'] as String?;
+                        return mime != null &&
+                            (mime.startsWith('image/') || mime.startsWith('video/'));
+                      }).map((att) {
+                        final mime = att['mime'] as String?;
+                        if (mime != null && mime.startsWith('image/')) {
+                          return Padding(
+                            padding: EdgeInsets.only(
+                              top: msg.content.isEmpty && !hasOnlyMedia ? 0 : 4,
+                            ),
+                            child: _buildImagePreview(att, isOwn),
+                          );
+                        } else if (mime != null && mime.startsWith('video/')) {
+                          return Padding(
+                            padding: EdgeInsets.only(
+                              top: msg.content.isEmpty && !hasOnlyMedia ? 0 : 4,
+                            ),
+                            child: _buildVideoPreview(att, isOwn),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      }),
+                    // Timestamp
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4, left: 8, right: 8),
+                      child: Text(
                         _formatTime(msg.createdAt),
                         style: TextStyle(
                           fontSize: 10,
-                          color: isOwn ? Colors.white70 : Colors.grey[600],
+                          color: Colors.grey[600],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
 
@@ -981,6 +964,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
       padding: EdgeInsets.only(
         left: isOwn ? 8 : 0,
         right: isOwn ? 0 : 8,
+        bottom: 4,
       ),
       child: Material(
         color: Colors.transparent,
@@ -1020,41 +1004,53 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
   }
 
   Widget _buildImagePreview(Map<String, dynamic> att, bool isOwn) {
+    final imageUrl = '${widget.apiBaseUrl}${att['url']}';
+    print('Loading image from: $imageUrl');
+
     return GestureDetector(
       onTap: () => _showImageDialog(att['url']),
       child: Container(
-        margin: const EdgeInsets.only(top: 4),
         constraints: const BoxConstraints(
           maxWidth: 280,
           maxHeight: 350,
         ),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
           child: CachedNetworkImage(
-            imageUrl: '${widget.apiBaseUrl}${att['url']}',
+            imageUrl: imageUrl,
             fit: BoxFit.cover,
+            httpHeaders: {
+              'Accept': 'image/*',
+            },
             placeholder: (context, url) => Container(
               height: 200,
               decoration: BoxDecoration(
-                color: isOwn
-                    ? Colors.white.withOpacity(0.2)
-                    : Colors.grey[200],
+                color: Colors.grey[200],
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Center(
+              child: const Center(
                 child: CircularProgressIndicator(
-                  color: isOwn ? Colors.white : AppColors.primary2,
+                  color: AppColors.primary2,
                   strokeWidth: 2,
                 ),
               ),
             ),
             errorWidget: (context, url, error) {
+              print('Error loading image from $url: $error');
               return Container(
                 height: 200,
                 decoration: BoxDecoration(
-                  color: isOwn
-                      ? Colors.white.withOpacity(0.2)
-                      : Colors.grey[200],
+                  color: Colors.grey[200],
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -1062,16 +1058,25 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                   children: [
                     Icon(
                       Icons.broken_image_rounded,
-                      color: isOwn ? Colors.white : Colors.grey,
+                      color: Colors.grey[400],
                       size: 48,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Failed to load image',
+                      'Không tải được ảnh',
                       style: TextStyle(
-                        color: isOwn ? Colors.white70 : Colors.grey[600],
+                        color: Colors.grey[600],
                         fontSize: 12,
                       ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      error.toString(),
+                      style: TextStyle(
+                        color: Colors.grey[500],
+                        fontSize: 10,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),
@@ -1087,60 +1092,157 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
     return GestureDetector(
       onTap: () => _showVideoDialog(att['url']),
       child: Container(
+        constraints: const BoxConstraints(
+          maxWidth: 280,
+        ),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 280,
+                height: 180,
+                color: Colors.grey[900],
+                child: const Icon(
+                  Icons.video_library_rounded,
+                  size: 64,
+                  color: Colors.white54,
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.play_arrow_rounded,
+                  color: Colors.white,
+                  size: 32,
+                ),
+              ),
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withOpacity(0.7),
+                      ],
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.videocam_rounded,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          att['filename'] ?? 'Video',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFileAttachment(Map<String, dynamic> att, bool isOwn) {
+    return GestureDetector(
+      onTap: () => _downloadFile(att),
+      child: Container(
         margin: const EdgeInsets.only(top: 4),
-        child: Stack(
-          alignment: Alignment.center,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isOwn
+              ? Colors.white.withOpacity(0.2)
+              : AppColors.primary5.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isOwn
+                ? Colors.white.withOpacity(0.3)
+                : AppColors.primary5.withOpacity(0.5),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 250,
-              height: 180,
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: isOwn
                     ? Colors.white.withOpacity(0.2)
-                    : Colors.grey[300],
-                borderRadius: BorderRadius.circular(12),
+                    : AppColors.primary5.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(8),
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Icon(
-                  Icons.video_library_rounded,
-                  size: 64,
-                  color: isOwn ? Colors.white : Colors.grey[600],
-                ),
+              child: Icon(
+                _getFileIcon(att['mime']),
+                size: 20,
+                color: isOwn ? Colors.white : AppColors.primary2,
               ),
             ),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.6),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.play_arrow_rounded,
-                color: Colors.white,
-                size: 32,
-              ),
-            ),
-            Positioned(
-              bottom: 8,
-              left: 8,
-              right: 8,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  att['filename'] ?? 'Video',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
+            const SizedBox(width: 12),
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    att['filename'] ?? 'File',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isOwn ? Colors.white : Colors.black87,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _getFileMimeDisplay(att['mime']),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isOwn ? Colors.white70 : Colors.grey[600],
+                    ),
+                  ),
+                ],
               ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              Icons.download_rounded,
+              size: 18,
+              color: isOwn ? Colors.white : AppColors.primary2,
             ),
           ],
         ),
@@ -1148,79 +1250,34 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildFileAttachment(Map<String, dynamic> att, bool isOwn) {
-    return Container(
-      margin: const EdgeInsets.only(top: 4),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isOwn
-            ? Colors.white.withOpacity(0.2)
-            : AppColors.primary5.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isOwn
-              ? Colors.white.withOpacity(0.3)
-              : AppColors.primary5.withOpacity(0.5),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: isOwn
-                  ? Colors.white.withOpacity(0.2)
-                  : AppColors.primary5.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              _getFileIcon(att['mime']),
-              size: 20,
-              color: isOwn ? Colors.white : AppColors.primary2,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Flexible(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  att['filename'] ?? 'File',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: isOwn ? Colors.white : Colors.black87,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _getFileMimeDisplay(att['mime']),
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isOwn ? Colors.white70 : Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Icon(
-            Icons.download_rounded,
-            size: 18,
-            color: isOwn ? Colors.white : AppColors.primary2,
-          ),
-        ],
-      ),
-    );
+  Future<void> _downloadFile(Map<String, dynamic> att) async {
+    try {
+      final url = '${widget.apiBaseUrl}${att['url']}';
+      print('Downloading file from: $url');
+
+      // You can implement download here
+      // For web, you can open in new tab or use html package
+      // For mobile, you can use path_provider and save to device
+
+      // Simple approach: open in browser
+      // import 'dart:html' as html; // For web
+      // html.window.open(url, '_blank');
+
+      print('File download initiated: ${att['filename']}');
+    } catch (e) {
+      print('Error downloading file: $e');
+    }
   }
 
   IconData _getFileIcon(String? mime) {
     if (mime == null) return Icons.insert_drive_file;
     if (mime.contains('pdf')) return Icons.picture_as_pdf;
-    if (mime.contains('word') || mime.contains('document')) return Icons.description;
-    if (mime.contains('excel') || mime.contains('spreadsheet')) return Icons.table_chart;
+    if (mime.contains('word') || mime.contains('document')) {
+      return Icons.description;
+    }
+    if (mime.contains('excel') || mime.contains('spreadsheet')) {
+      return Icons.table_chart;
+    }
     if (mime.contains('zip') || mime.contains('rar')) return Icons.folder_zip;
     if (mime.contains('audio')) return Icons.audiotrack;
     return Icons.insert_drive_file;
@@ -1329,165 +1386,6 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildFilePreview() {
-    if (_previewFile == null) return const SizedBox.shrink();
-
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.primary5.withOpacity(0.1),
-        border: Border(
-          top: BorderSide(color: AppColors.primary5.withOpacity(0.3)),
-        ),
-      ),
-      child: Row(
-        children: [
-          if (_isGeneratingPreview)
-            const SizedBox(
-              width: 60,
-              height: 60,
-              child: Center(
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: AppColors.primary2,
-                ),
-              ),
-            )
-          else if (_previewImageData != null)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.memory(
-                _previewImageData!,
-                width: 60,
-                height: 60,
-                fit: BoxFit.cover,
-              ),
-            )
-          else if (_isVideoFile(_previewFile!.extension))
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Icon(Icons.video_library_rounded,
-                        size: 30, color: Colors.grey[600]),
-                    Positioned(
-                      bottom: 4,
-                      right: 4,
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: const BoxDecoration(
-                          color: Colors.black54,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.play_arrow,
-                          color: Colors.white,
-                          size: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: AppColors.primary5.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  _getFileIconByExtension(_previewFile!.extension),
-                  size: 30,
-                  color: AppColors.primary2,
-                ),
-              ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _previewFile!.name,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _formatFileSize(_previewFile!.size),
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close, size: 20),
-            onPressed: _cancelPreview,
-            color: Colors.grey[600],
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.primary2, AppColors.primary3],
-              ),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(8),
-                onTap: _isGeneratingPreview ? null : _sendFileWithPreview,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: Icon(
-                    Icons.send_rounded,
-                    color: Colors.white,
-                    size: 18,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  IconData _getFileIconByExtension(String? ext) {
-    if (ext == null) return Icons.insert_drive_file;
-    ext = ext.toLowerCase();
-    if (ext == 'pdf') return Icons.picture_as_pdf;
-    if (['doc', 'docx'].contains(ext)) return Icons.description;
-    if (['xls', 'xlsx'].contains(ext)) return Icons.table_chart;
-    if (['zip', 'rar', '7z'].contains(ext)) return Icons.folder_zip;
-    if (['mp3', 'wav', 'aac'].contains(ext)) return Icons.audiotrack;
-    return Icons.insert_drive_file;
-  }
-
-  String _formatFileSize(int bytes) {
-    if (bytes < 1024) return '$bytes B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
-  }
-
   Widget _buildReplyPreview() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -1519,7 +1417,9 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  replyingTo!.content,
+                  replyingTo!.content.isEmpty
+                      ? '📎 Attachment'
+                      : replyingTo!.content,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
@@ -1578,7 +1478,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                   color: Colors.transparent,
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
-                    onTap: pickFile,
+                    onTap: uploadFile,
                     child: const Padding(
                       padding: EdgeInsets.all(10),
                       child: Icon(
@@ -1815,7 +1715,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
             Icon(Icons.error_outline, color: Colors.white, size: 64),
             SizedBox(height: 16),
             Text(
-              'Error loading video',
+              'Không thể phát video',
               style: TextStyle(color: Colors.white),
             ),
           ],
