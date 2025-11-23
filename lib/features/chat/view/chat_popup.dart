@@ -1,27 +1,3 @@
-// pubspec.yaml dependencies:
-// dependencies:
-//   flutter:
-//     sdk: flutter
-//   web_socket_channel: ^2.4.0
-//   http: ^1.1.0
-//   file_picker: ^6.1.1
-//   cached_network_image: ^3.3.0
-//   video_player: ^2.8.0
-//
-// final userIdController = TextEditingController(text: 'think');
-// final conversationIdController = TextEditingController(text: 'g1');
-// final apiUrlController = TextEditingController(text: 'http://127.0.0.1:8000/api');
-// pubspec.yaml dependencies:
-// dependencies:
-//   flutter:
-//     sdk: flutter
-//   web_socket_channel: ^2.4.0
-//   http: ^1.1.0
-//   file_picker: ^6.1.1
-//   cached_network_image: ^3.3.0
-//   video_player: ^2.8.0
-//   url_launcher: ^6.2.0
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
