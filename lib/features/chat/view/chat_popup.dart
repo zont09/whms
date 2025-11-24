@@ -52,7 +52,9 @@ class ChatDemo extends StatefulWidget {
 class _ChatDemoState extends State<ChatDemo> {
   final userIdController = TextEditingController(text: 'think');
   final conversationIdController = TextEditingController(text: 'g1');
-  final apiUrlController = TextEditingController(text: 'http://127.0.0.1:8000/api');
+  final apiUrlController = TextEditingController(
+    text: 'http://127.0.0.1:8000/api',
+  );
   bool showChat = false;
 
   @override
@@ -196,8 +198,11 @@ class _ChatDemoState extends State<ChatDemo> {
                         children: [
                           Row(
                             children: [
-                              Icon(Icons.info_outline,
-                                  size: 18, color: AppColors.primary2),
+                              Icon(
+                                Icons.info_outline,
+                                size: 18,
+                                color: AppColors.primary2,
+                              ),
                               const SizedBox(width: 8),
                               const Text(
                                 'Tính năng',
@@ -227,15 +232,15 @@ class _ChatDemoState extends State<ChatDemo> {
       ),
       floatingActionButton: showChat
           ? ChatWidget(
-        userId: userIdController.text,
-        conversationId: conversationIdController.text,
-        apiBaseUrl: apiUrlController.text,
-        onClose: () {
-          setState(() {
-            showChat = false;
-          });
-        },
-      )
+              userId: userIdController.text,
+              conversationId: conversationIdController.text,
+              apiBaseUrl: apiUrlController.text,
+              onClose: () {
+                setState(() {
+                  showChat = false;
+                });
+              },
+            )
           : null,
     );
   }
@@ -252,9 +257,7 @@ class _ChatDemoState extends State<ChatDemo> {
         labelText: label,
         hintText: hint,
         prefixIcon: Icon(icon, color: AppColors.primary3),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: Colors.grey[300]!),
@@ -272,10 +275,7 @@ class _ChatDemoState extends State<ChatDemo> {
       padding: const EdgeInsets.only(bottom: 6),
       child: Text(
         text,
-        style: TextStyle(
-          fontSize: 13,
-          color: Colors.grey[700],
-        ),
+        style: TextStyle(fontSize: 13, color: Colors.grey[700]),
       ),
     );
   }
@@ -286,6 +286,7 @@ class ChatWidget extends StatefulWidget {
   final String conversationId;
   final String apiBaseUrl;
   final VoidCallback onClose;
+  final WebSocketChannel? channel;
 
   const ChatWidget({
     super.key,
@@ -293,6 +294,7 @@ class ChatWidget extends StatefulWidget {
     required this.conversationId,
     required this.apiBaseUrl,
     required this.onClose,
+    this.channel,
   });
 
   @override
@@ -320,13 +322,10 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: Curves.easeOutCubic,
-    ));
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 1), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic),
+        );
     _slideController.forward();
     loadMessages();
     connectWebSocket();
@@ -379,18 +378,23 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
 
   void connectWebSocket() {
     try {
-      final wsUrl = widget.apiBaseUrl.replaceFirst('http', 'ws');
-      final uri = Uri.parse(
-          '$wsUrl/ws/chat/${widget.conversationId}/${widget.userId}');
+      if (widget.channel == null) {
+        final wsUrl = widget.apiBaseUrl.replaceFirst('http', 'ws');
+        final uri = Uri.parse(
+          '$wsUrl/ws/chat/${widget.conversationId}/${widget.userId}',
+        );
 
-      channel = WebSocketChannel.connect(uri);
+        channel = WebSocketChannel.connect(uri);
+      } else {
+        channel = widget.channel;
+        debugPrint("[THINK] ====> on connect channel exist");
+      }
 
-      setState(() {
-        isConnected = true;
-      });
+      debugPrint("[THINK] ====> set connected = true");
+      isConnected = true;
 
       channel!.stream.listen(
-            (message) {
+        (message) {
           try {
             final data = json.decode(message);
             if (data['type'] == 'message' && data['message'] != null) {
@@ -472,17 +476,22 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
         final request = http.MultipartRequest(
           'POST',
           Uri.parse(
-              '${widget.apiBaseUrl}/chats/${widget.conversationId}/upload'),
+            '${widget.apiBaseUrl}/chats/${widget.conversationId}/upload',
+          ),
         );
 
         request.fields['sender_id'] = widget.userId;
-        request.files.add(http.MultipartFile.fromBytes(
-          'file',
-          file.bytes!,
-          filename: file.name,
-        ));
+        request.files.add(
+          http.MultipartFile.fromBytes(
+            'file',
+            file.bytes!,
+            filename: file.name,
+          ),
+        );
 
-        print('Sending upload request to: ${widget.apiBaseUrl}/chats/${widget.conversationId}/upload');
+        print(
+          'Sending upload request to: ${widget.apiBaseUrl}/chats/${widget.conversationId}/upload',
+        );
         final response = await request.send();
         final responseData = await response.stream.bytesToString();
         print('Upload response: $responseData');
@@ -490,9 +499,12 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
         final data = json.decode(responseData);
 
         if (data['ok'] == true && channel != null) {
-          print('Upload successful! File ID: ${data['file_id']}, URL: ${data['url']}');
+          print(
+            'Upload successful! File ID: ${data['file_id']}, URL: ${data['url']}',
+          );
 
-          final isMedia = _isImageFile(data['mime']) || _isVideoFile(data['mime']);
+          final isMedia =
+              _isImageFile(data['mime']) || _isVideoFile(data['mime']);
 
           final messageData = {
             'type': 'message',
@@ -504,7 +516,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                 'filename': data['filename'],
                 'mime': data['mime'],
                 'url': data['url'],
-              }
+              },
             ],
             if (replyingTo != null) 'reply_to': replyingTo!.id,
           };
@@ -547,9 +559,8 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                 child: CachedNetworkImage(
                   imageUrl: '${widget.apiBaseUrl}$imageUrl',
                   placeholder: (context, url) =>
-                  const CircularProgressIndicator(),
-                  errorWidget: (context, url, error) =>
-                  const Icon(Icons.error),
+                      const CircularProgressIndicator(),
+                  errorWidget: (context, url, error) => const Icon(Icons.error),
                 ),
               ),
             ),
@@ -559,9 +570,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
               child: IconButton(
                 icon: const Icon(Icons.close, color: Colors.white, size: 30),
                 onPressed: () => Navigator.pop(context),
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.black54,
-                ),
+                style: IconButton.styleFrom(backgroundColor: Colors.black54),
               ),
             ),
           ],
@@ -602,8 +611,11 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
               },
               child: const Padding(
                 padding: EdgeInsets.all(18),
-                child: Icon(Icons.chat_bubble_rounded,
-                    color: Colors.white, size: 28),
+                child: Icon(
+                  Icons.chat_bubble_rounded,
+                  color: Colors.white,
+                  size: 28,
+                ),
               ),
             ),
           ),
@@ -672,8 +684,11 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: const Icon(Icons.chat_bubble_rounded,
-                color: Colors.white, size: 22),
+            child: const Icon(
+              Icons.chat_bubble_rounded,
+              color: Colors.white,
+              size: 22,
+            ),
           ),
           const SizedBox(width: 12),
           const Column(
@@ -690,10 +705,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
               SizedBox(height: 2),
               Text(
                 'Real-time messaging',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: Colors.white70, fontSize: 12),
               ),
             ],
           ),
@@ -743,10 +755,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [
-            AppColors.primary5.withOpacity(0.05),
-            Colors.white,
-          ],
+          colors: [AppColors.primary5.withOpacity(0.05), Colors.white],
         ),
       ),
       child: ListView.builder(
@@ -757,12 +766,22 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
           final msg = messages[index];
           final isOwn = msg.senderId == widget.userId;
 
-          final isLastInSequence = index == messages.length - 1 ||
+          final isLastInSequence =
+              index == messages.length - 1 ||
               messages[index + 1].senderId != msg.senderId ||
-              _getTimeDifferenceMinutes(msg.createdAt, messages[index + 1].createdAt) > 5;
+              _getTimeDifferenceMinutes(
+                    msg.createdAt,
+                    messages[index + 1].createdAt,
+                  ) >
+                  5;
 
-          final showTimeSeparator = index > 0 &&
-              _getTimeDifferenceHours(messages[index - 1].createdAt, msg.createdAt) >= 1;
+          final showTimeSeparator =
+              index > 0 &&
+              _getTimeDifferenceHours(
+                    messages[index - 1].createdAt,
+                    msg.createdAt,
+                  ) >=
+                  1;
 
           if (!_messageKeys.containsKey(msg.id)) {
             _messageKeys[msg.id] = GlobalKey();
@@ -785,12 +804,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Row(
         children: [
-          Expanded(
-            child: Divider(
-              color: Colors.grey[300],
-              thickness: 1,
-            ),
-          ),
+          Expanded(child: Divider(color: Colors.grey[300], thickness: 1)),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text(
@@ -802,12 +816,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
               ),
             ),
           ),
-          Expanded(
-            child: Divider(
-              color: Colors.grey[300],
-              thickness: 1,
-            ),
-          ),
+          Expanded(child: Divider(color: Colors.grey[300], thickness: 1)),
         ],
       ),
     );
@@ -853,8 +862,13 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
     }
   }
 
-  Widget _buildMessageBubble(ChatMessage msg, bool isOwn, bool isLastInSequence) {
-    final hasOnlyMedia = msg.content.isEmpty &&
+  Widget _buildMessageBubble(
+    ChatMessage msg,
+    bool isOwn,
+    bool isLastInSequence,
+  ) {
+    final hasOnlyMedia =
+        msg.content.isEmpty &&
         msg.attachments.isNotEmpty &&
         msg.attachments.every((att) {
           final mime = att['mime'] as String?;
@@ -874,7 +888,9 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
             right: isOwn ? 0 : 60,
           ),
           child: Row(
-            mainAxisAlignment: isOwn ? MainAxisAlignment.end : MainAxisAlignment.start,
+            mainAxisAlignment: isOwn
+                ? MainAxisAlignment.end
+                : MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               if (isOwn) _buildReplyButton(msg, isOwn),
@@ -884,7 +900,9 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                 const SizedBox(width: 40),
               Flexible(
                 child: Column(
-                  crossAxisAlignment: isOwn ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  crossAxisAlignment: isOwn
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
                   children: [
                     if (msg.content.isNotEmpty || !hasOnlyMedia)
                       Container(
@@ -892,8 +910,11 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                         decoration: BoxDecoration(
                           gradient: isOwn
                               ? const LinearGradient(
-                            colors: [AppColors.primary2, AppColors.primary3],
-                          )
+                                  colors: [
+                                    AppColors.primary2,
+                                    AppColors.primary3,
+                                  ],
+                                )
                               : null,
                           color: isOwn ? null : Colors.white,
                           borderRadius: BorderRadius.only(
@@ -904,7 +925,9 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                           ),
                           border: isOwn
                               ? null
-                              : Border.all(color: AppColors.primary5.withOpacity(0.3)),
+                              : Border.all(
+                                  color: AppColors.primary5.withOpacity(0.3),
+                                ),
                           boxShadow: [
                             BoxShadow(
                               color: isOwn
@@ -922,7 +945,8 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                               Padding(
                                 padding: const EdgeInsets.only(bottom: 6),
                                 child: Text(
-                                  _getUserDisplayName(msg.senderId) ?? msg.senderId,
+                                  _getUserDisplayName(msg.senderId) ??
+                                      msg.senderId,
                                   style: const TextStyle(
                                     fontSize: 11,
                                     fontWeight: FontWeight.bold,
@@ -942,44 +966,61 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                                 ),
                               ),
                             if (msg.attachments.isNotEmpty) ...[
-                              if (msg.content.isNotEmpty) const SizedBox(height: 8),
-                              ...msg.attachments.where((att) {
-                                final mime = att['mime'] as String?;
-                                return mime != null &&
-                                    !mime.startsWith('image/') &&
-                                    !mime.startsWith('video/');
-                              }).map((att) => _buildFileAttachment(att, isOwn)),
+                              if (msg.content.isNotEmpty)
+                                const SizedBox(height: 8),
+                              ...msg.attachments
+                                  .where((att) {
+                                    final mime = att['mime'] as String?;
+                                    return mime != null &&
+                                        !mime.startsWith('image/') &&
+                                        !mime.startsWith('video/');
+                                  })
+                                  .map(
+                                    (att) => _buildFileAttachment(att, isOwn),
+                                  ),
                             ],
                           ],
                         ),
                       ),
                     if (msg.attachments.isNotEmpty)
-                      ...msg.attachments.where((att) {
-                        final mime = att['mime'] as String?;
-                        return mime != null &&
-                            (mime.startsWith('image/') || mime.startsWith('video/'));
-                      }).map((att) {
-                        final mime = att['mime'] as String?;
-                        if (mime != null && mime.startsWith('image/')) {
-                          return Padding(
-                            padding: EdgeInsets.only(
-                              top: msg.content.isEmpty && !hasOnlyMedia ? 0 : 4,
-                            ),
-                            child: _buildImagePreview(att, isOwn),
-                          );
-                        } else if (mime != null && mime.startsWith('video/')) {
-                          return Padding(
-                            padding: EdgeInsets.only(
-                              top: msg.content.isEmpty && !hasOnlyMedia ? 0 : 4,
-                            ),
-                            child: _buildVideoPreview(att, isOwn),
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      }),
+                      ...msg.attachments
+                          .where((att) {
+                            final mime = att['mime'] as String?;
+                            return mime != null &&
+                                (mime.startsWith('image/') ||
+                                    mime.startsWith('video/'));
+                          })
+                          .map((att) {
+                            final mime = att['mime'] as String?;
+                            if (mime != null && mime.startsWith('image/')) {
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  top: msg.content.isEmpty && !hasOnlyMedia
+                                      ? 0
+                                      : 4,
+                                ),
+                                child: _buildImagePreview(att, isOwn),
+                              );
+                            } else if (mime != null &&
+                                mime.startsWith('video/')) {
+                              return Padding(
+                                padding: EdgeInsets.only(
+                                  top: msg.content.isEmpty && !hasOnlyMedia
+                                      ? 0
+                                      : 4,
+                                ),
+                                child: _buildVideoPreview(att, isOwn),
+                              );
+                            }
+                            return const SizedBox.shrink();
+                          }),
                     if (isLastInSequence)
                       Padding(
-                        padding: const EdgeInsets.only(top: 4, left: 8, right: 8),
+                        padding: const EdgeInsets.only(
+                          top: 4,
+                          left: 8,
+                          right: 8,
+                        ),
                         child: Text(
                           _formatTime(msg.createdAt),
                           style: TextStyle(
@@ -1009,21 +1050,21 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
         margin: const EdgeInsets.only(left: 8, right: 8, bottom: 4),
         child: avatarUrl != null
             ? CircleAvatar(
-          radius: 16,
-          backgroundImage: CachedNetworkImageProvider(avatarUrl),
-        )
+                radius: 16,
+                backgroundImage: CachedNetworkImageProvider(avatarUrl),
+              )
             : CircleAvatar(
-          radius: 16,
-          backgroundColor: AppColors.primary5,
-          child: Text(
-            userId[0].toUpperCase(),
-            style: const TextStyle(
-              color: AppColors.primary2,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
-          ),
-        ),
+                radius: 16,
+                backgroundColor: AppColors.primary5,
+                child: Text(
+                  userId[0].toUpperCase(),
+                  style: const TextStyle(
+                    color: AppColors.primary2,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+              ),
       ),
     );
   }
@@ -1087,10 +1128,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
     return GestureDetector(
       onTap: () => _showImageDialog(att['url']),
       child: Container(
-        constraints: const BoxConstraints(
-          maxWidth: 280,
-          maxHeight: 350,
-        ),
+        constraints: const BoxConstraints(maxWidth: 280, maxHeight: 350),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
@@ -1106,9 +1144,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
           child: CachedNetworkImage(
             imageUrl: imageUrl,
             fit: BoxFit.cover,
-            httpHeaders: {
-              'Accept': 'image/*',
-            },
+            httpHeaders: {'Accept': 'image/*'},
             placeholder: (context, url) => Container(
               height: 200,
               decoration: BoxDecoration(
@@ -1140,10 +1176,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                     const SizedBox(height: 8),
                     Text(
                       'Không tải được ảnh',
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
                     ),
                   ],
                 ),
@@ -1159,9 +1192,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
     return GestureDetector(
       onTap: () => _showVideoDialog(att['url']),
       child: Container(
-        constraints: const BoxConstraints(
-          maxWidth: 280,
-        ),
+        constraints: const BoxConstraints(maxWidth: 280),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
@@ -1204,7 +1235,10 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                 left: 0,
                 right: 0,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
@@ -1365,7 +1399,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
 
   Widget _buildReplyIndicator(ChatMessage msg, bool isOwn) {
     final replyMsg = messages.firstWhere(
-          (m) => m.id == msg.replyTo,
+      (m) => m.id == msg.replyTo,
       orElse: () => ChatMessage(
         id: '',
         conversationId: '',
@@ -1460,9 +1494,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
               child: IconButton(
                 icon: const Icon(Icons.close, color: Colors.white, size: 30),
                 onPressed: () => Navigator.pop(context),
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.black54,
-                ),
+                style: IconButton.styleFrom(backgroundColor: Colors.black54),
               ),
             ),
           ],
@@ -1482,11 +1514,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
       ),
       child: Row(
         children: [
-          Container(
-            width: 3,
-            height: 40,
-            color: AppColors.primary2,
-          ),
+          Container(width: 3, height: 40, color: AppColors.primary2),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -1507,10 +1535,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                       : replyingTo!.content,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[700],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                 ),
               ],
             ),
@@ -1536,9 +1561,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Colors.grey[200]!),
-        ),
+        border: Border(top: BorderSide(color: Colors.grey[200]!)),
         borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(20),
           bottomRight: Radius.circular(20),
@@ -1590,16 +1613,14 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                     controller: messageController,
                     focusNode: _focusNode,
                     decoration: const InputDecoration(
-                      hintText: 'Nhập tin nhắn... (Enter: gửi, Shift+Enter: xuống hàng)',
+                      hintText:
+                          'Nhập tin nhắn... (Enter: gửi, Shift+Enter: xuống hàng)',
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(
                         horizontal: 16,
                         vertical: 12,
                       ),
-                      hintStyle: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey,
-                      ),
+                      hintStyle: TextStyle(fontSize: 13, color: Colors.grey),
                     ),
                     maxLines: null,
                     keyboardType: TextInputType.multiline,
@@ -1627,12 +1648,12 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                   boxShadow: messageController.text.trim().isEmpty
                       ? []
                       : [
-                    BoxShadow(
-                      color: AppColors.primary2.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                          BoxShadow(
+                            color: AppColors.primary2.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                 ),
                 child: Material(
                   color: Colors.transparent,
@@ -1788,10 +1809,7 @@ class _VideoPlayerWidgetState extends State<VideoPlayerWidget> {
           children: [
             Icon(Icons.error_outline, color: Colors.white, size: 64),
             SizedBox(height: 16),
-            Text(
-              'Không thể phát video',
-              style: TextStyle(color: Colors.white),
-            ),
+            Text('Không thể phát video', style: TextStyle(color: Colors.white)),
           ],
         ),
       );
