@@ -5,9 +5,6 @@ import 'dart:convert';
 
 import 'package:whms/features/chat/view/chat_popup.dart';
 
-// Import your existing chat_popup.dart file
-// import 'chat_popup.dart';
-
 void main() {
   runApp(const MyApp());
 }
@@ -157,17 +154,25 @@ class _MultiChatManagerState extends State<MultiChatManager>
       final wsUrl = widget.apiBaseUrl.replaceFirst('http', 'ws');
       final uri = Uri.parse('$wsUrl/ws/chat/$conversationId/${widget.userId}');
 
+      print('Connecting WebSocket for $conversationId: $uri');
+
       final channel = WebSocketChannel.connect(uri);
       _channels[conversationId] = channel;
 
-      setState(() {
-        _conversationInfos[conversationId]?.isConnected = true;
-      });
+      if (mounted) {
+        setState(() {
+          _conversationInfos[conversationId]?.isConnected = true;
+        });
+      }
+
+      print('WebSocket connected for $conversationId');
 
       channel.stream.listen(
             (message) {
+          print('Received message on $conversationId: $message');
           try {
             final data = json.decode(message);
+            print('Parsed data: $data');
             if (data['type'] == 'message' && data['message'] != null) {
               _handleNewMessage(conversationId, data['message']);
             }
@@ -176,27 +181,33 @@ class _MultiChatManagerState extends State<MultiChatManager>
           }
         },
         onError: (error) {
-          setState(() {
-            _conversationInfos[conversationId]?.isConnected = false;
-          });
-          print('WebSocket error for $conversationId: $error');
+          print('WebSocket ERROR for $conversationId: $error');
+          if (mounted) {
+            setState(() {
+              _conversationInfos[conversationId]?.isConnected = false;
+            });
+          }
 
-          // Reconnect after 3 seconds
-          Future.delayed(const Duration(seconds: 3), () {
+          // Reconnect after 5 seconds
+          Future.delayed(const Duration(seconds: 5), () {
             if (mounted) {
+              print('Attempting to reconnect $conversationId...');
               _connectWebSocket(conversationId);
             }
           });
         },
         onDone: () {
-          setState(() {
-            _conversationInfos[conversationId]?.isConnected = false;
-          });
-          print('WebSocket closed for $conversationId');
+          print('WebSocket CLOSED for $conversationId');
+          if (mounted) {
+            setState(() {
+              _conversationInfos[conversationId]?.isConnected = false;
+            });
+          }
 
-          // Reconnect after 3 seconds
-          Future.delayed(const Duration(seconds: 3), () {
+          // Reconnect after 5 seconds
+          Future.delayed(const Duration(seconds: 5), () {
             if (mounted) {
+              print('Attempting to reconnect $conversationId...');
               _connectWebSocket(conversationId);
             }
           });
@@ -204,9 +215,11 @@ class _MultiChatManagerState extends State<MultiChatManager>
       );
     } catch (e) {
       print('Error connecting WebSocket for $conversationId: $e');
-      setState(() {
-        _conversationInfos[conversationId]?.isConnected = false;
-      });
+      if (mounted) {
+        setState(() {
+          _conversationInfos[conversationId]?.isConnected = false;
+        });
+      }
     }
   }
 
@@ -223,16 +236,20 @@ class _MultiChatManagerState extends State<MultiChatManager>
     if (senderId != widget.userId && _selectedConversationId != conversationId) {
       // Check if this is a new message (not duplicate)
       if (messageId != null && messageId != info.lastMessageId) {
-        setState(() {
-          info.unreadCount++;
-          info.lastMessageId = messageId;
-        });
+        if (mounted) {
+          setState(() {
+            info.unreadCount++;
+            info.lastMessageId = messageId;
+          });
+        }
       }
     } else if (_selectedConversationId == conversationId) {
       // If viewing this conversation, update last message but don't increment unread
-      setState(() {
-        info.lastMessageId = messageId;
-      });
+      if (mounted) {
+        setState(() {
+          info.lastMessageId = messageId;
+        });
+      }
     }
   }
 
@@ -244,9 +261,11 @@ class _MultiChatManagerState extends State<MultiChatManager>
   }
 
   void _markAsRead(String conversationId) {
-    setState(() {
-      _conversationInfos[conversationId]?.unreadCount = 0;
-    });
+    if (mounted) {
+      setState(() {
+        _conversationInfos[conversationId]?.unreadCount = 0;
+      });
+    }
   }
 
   int _getTotalUnreadCount() {
@@ -447,122 +466,117 @@ class _MultiChatManagerState extends State<MultiChatManager>
     final avatarUrl = _getConversationAvatar(conversationId);
     final name = _getConversationName(conversationId) ?? conversationId;
 
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      child: GestureDetector(
-        onTap: () => _selectConversation(conversationId),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: isSelected ? AppColors.primary2 : Colors.transparent,
-              width: 3,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: isSelected
-                    ? AppColors.primary2.withOpacity(0.4)
-                    : Colors.black.withOpacity(0.1),
-                blurRadius: isSelected ? 12 : 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
+    return GestureDetector(
+      onTap: () => _selectConversation(conversationId),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isSelected ? AppColors.primary2 : Colors.transparent,
+            width: 3,
           ),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Tooltip(
-                message: name,
-                child: Stack(
-                  children: [
-                    avatarUrl != null
-                        ? CircleAvatar(
-                      radius: 26,
-                      backgroundImage: CachedNetworkImageProvider(avatarUrl),
-                    )
-                        : CircleAvatar(
-                      radius: 26,
-                      backgroundColor: AppColors.primary5,
-                      child: Text(
-                        conversationId[0].toUpperCase(),
-                        style: const TextStyle(
-                          color: AppColors.primary2,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
+          boxShadow: [
+            BoxShadow(
+              color: isSelected
+                  ? AppColors.primary2.withOpacity(0.4)
+                  : Colors.black.withOpacity(0.1),
+              blurRadius: isSelected ? 12 : 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Tooltip(
+              message: name,
+              child: Stack(
+                children: [
+                  avatarUrl != null
+                      ? CircleAvatar(
+                    radius: 26,
+                    backgroundImage: CachedNetworkImageProvider(avatarUrl),
+                  )
+                      : CircleAvatar(
+                    radius: 26,
+                    backgroundColor: AppColors.primary5,
+                    child: Text(
+                      conversationId[0].toUpperCase(),
+                      style: const TextStyle(
+                        color: AppColors.primary2,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
                       ),
                     ),
-                    // Connection status indicator
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        width: 12,
-                        height: 12,
-                        decoration: BoxDecoration(
-                          color: isConnected ? Colors.greenAccent : Colors.grey,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Unread badge
-              if (unreadCount > 0)
-                Positioned(
-                  top: -4,
-                  right: -4,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: Colors.white,
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.red.withOpacity(0.5),
-                          blurRadius: 8,
-                          spreadRadius: 1,
-                        ),
-                      ],
-                    ),
-                    constraints: const BoxConstraints(
-                      minWidth: 20,
-                      minHeight: 20,
-                    ),
-                    child: Center(
-                      child: Text(
-                        unreadCount > 99 ? '99+' : unreadCount.toString(),
-                        style: const TextStyle(
+                  ),
+                  // Connection status indicator
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: isConnected ? Colors.greenAccent : Colors.grey,
+                        shape: BoxShape.circle,
+                        border: Border.all(
                           color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                          width: 2,
                         ),
                       ),
                     ),
                   ),
+                ],
+              ),
+            ),
+            // Unread badge - chấm đỏ thông báo
+            if (unreadCount > 0)
+              Positioned(
+                top: -4,
+                right: -4,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red.withOpacity(0.5),
+                        blurRadius: 8,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                  constraints: const BoxConstraints(
+                    minWidth: 20,
+                    minHeight: 20,
+                  ),
+                  child: Center(
+                    child: Text(
+                      unreadCount > 99 ? '99+' : unreadCount.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
                 ),
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildChatPopup(String conversationId) {
-    // This is a placeholder - you should replace this with your actual ChatWidget
-    // import from chat_popup.dart and use it here
     return Material(
       elevation: 20,
       borderRadius: BorderRadius.circular(20),
@@ -578,7 +592,7 @@ class _MultiChatManagerState extends State<MultiChatManager>
             width: 1,
           ),
         ),
-        child:ChatWidget(
+        child: ChatWidget(
           userId: widget.userId,
           conversationId: conversationId,
           apiBaseUrl: widget.apiBaseUrl,
@@ -590,112 +604,6 @@ class _MultiChatManagerState extends State<MultiChatManager>
           // Pass the existing WebSocket channel to avoid duplicate connections
           channel: _channels[conversationId],
         ),
-      ),
-    );
-
-    // ACTUAL USAGE (uncomment when you import ChatWidget):
-    /*
-    return ChatWidget(
-      userId: widget.userId,
-      conversationId: conversationId,
-      apiBaseUrl: widget.apiBaseUrl,
-      onClose: () {
-        setState(() {
-          _selectedConversationId = null;
-        });
-      },
-      // Pass the existing WebSocket channel to avoid duplicate connections
-      existingChannel: _channels[conversationId],
-    );
-    */
-  }
-
-  Widget _buildChatHeader(String conversationId) {
-    final name = _getConversationName(conversationId) ?? conversationId;
-    final isConnected = _conversationInfos[conversationId]?.isConnected ?? false;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.primary2, AppColors.primary3],
-        ),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primary2.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.chat_bubble_rounded,
-              color: Colors.white,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    Container(
-                      width: 6,
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: isConnected ? Colors.greenAccent : Colors.grey,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      isConnected ? 'Online' : 'Offline',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.close, color: Colors.white, size: 22),
-            onPressed: () {
-              setState(() {
-                _selectedConversationId = null;
-              });
-            },
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-          ),
-        ],
       ),
     );
   }
