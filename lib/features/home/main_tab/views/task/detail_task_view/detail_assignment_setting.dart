@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:whms/configs/color_config.dart';
 import 'package:whms/defines/priority_level_define.dart';
+import 'package:whms/defines/result_working_define.dart';
 import 'package:whms/defines/type_assignment_define.dart';
 import 'package:whms/features/home/main_tab/blocs/detail_assignment_cubit.dart';
 import 'package:whms/features/home/main_tab/widgets/task/choose_datetime_item.dart';
+import 'package:whms/features/home/main_tab/widgets/task/dropdown_result_working.dart';
 import 'package:whms/features/home/main_tab/widgets/task/list_priority_dropdown.dart';
 import 'package:whms/features/home/main_tab/widgets/task/list_working_point_dropdown.dart';
 import 'package:whms/features/manager/widgets/list_status_dropdown.dart';
@@ -130,6 +132,15 @@ class DetailAssignmentSetting extends StatelessWidget {
                 onChanged: (v) async {
                   await cubit.updateWP(v!);
                 }),
+          if (cubit.wu.type == TypeAssignmentDefine.task.title)
+            DropdownResultWorking(
+                onChanged: (v) {
+                  if(onUpdate != null) {
+                    onUpdate!(cubit.wu.copyWith(result: v!.title), cubit.wu);
+                  }
+                },
+                initItem: ResultWorkingExtension.convertTo(cubit.wu.result),
+                options: ResultWorkingDefine.values)
         ]);
   }
 }

@@ -122,13 +122,18 @@ class _MainTabState extends State<MainTab> {
                                               tab: widget.tab,
                                               cubitTM: cubit,
                                             ))
-                                    : getTabMainScreen(
-                                        widget.tab,
-                                        user,
-                                        cubit.listUserScope,
-                                        cubit.listProject,
-                                        cubit,
-                                      ),
+                                    : Stack(
+                                      children: [
+                                        getTabMainScreen(
+                                            widget.tab,
+                                            user,
+                                            cubit.listUserScope,
+                                            cubit.listProject,
+                                            cubit,
+                                          ),
+
+                                      ],
+                                    ),
                               ),
                             ],
                           ),
