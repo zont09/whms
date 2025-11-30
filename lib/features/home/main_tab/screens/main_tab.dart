@@ -136,7 +136,7 @@ class _MainTabState extends State<MainTab> {
                       ),
                     ],
                   ),
-                  FloatingChatBox(conversationId: 'group_a', userId: "123",)
+
                 ],
               );
             },
