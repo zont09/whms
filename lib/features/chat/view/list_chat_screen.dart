@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -38,8 +40,25 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class DemoScreen extends StatelessWidget {
+// NEW: Main demo screen with user ID input
+class DemoScreen extends StatefulWidget {
   const DemoScreen({super.key});
+
+  @override
+  State<DemoScreen> createState() => _DemoScreenState();
+}
+
+class _DemoScreenState extends State<DemoScreen> {
+  final TextEditingController _userIdController = TextEditingController(text: 'think');
+  final TextEditingController _apiUrlController = TextEditingController(text: 'http://127.0.0.1:8000/api');
+  String? _currentUserId;
+
+  @override
+  void dispose() {
+    _userIdController.dispose();
+    _apiUrlController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,20 +74,186 @@ class DemoScreen extends StatelessWidget {
             ],
           ),
         ),
-        child: const Center(
-          child: Text(
-            'Multi Chat Manager Demo',
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
+        child: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 500),
+            margin: const EdgeInsets.all(32),
+            child: Card(
+              elevation: 12,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(40),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [AppColors.primary2, AppColors.primary3],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.chat_bubble_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Multi Chat Manager',
+                              style: TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'Real-time messaging',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+                    _buildTextField(
+                      controller: _apiUrlController,
+                      label: 'API Base URL',
+                      icon: Icons.link,
+                      hint: 'http://localhost:8000/api',
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTextField(
+                      controller: _userIdController,
+                      label: 'User ID',
+                      icon: Icons.person,
+                      hint: 'Enter your user ID',
+                    ),
+                    const SizedBox(height: 28),
+                    Container(
+                      height: 56,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [AppColors.primary2, AppColors.primary3],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary2.withOpacity(0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(12),
+                          onTap: () {
+                            if (_userIdController.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Please enter User ID')),
+                              );
+                              return;
+                            }
+                            setState(() {
+                              _currentUserId = _userIdController.text.trim();
+                            });
+                          },
+                          child: Center(
+                            child: Text(
+                              _currentUserId == null ? 'Bắt đầu Chat' : 'Đổi User ID',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (_currentUserId != null) ...[
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary5.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.primary5.withOpacity(0.3),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.check_circle,
+                                color: AppColors.primary2, size: 20),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Đã đăng nhập: $_currentUserId',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
           ),
         ),
       ),
-      floatingActionButton: MultiChatManager(
-        userId: 'think',
+      floatingActionButton: _currentUserId != null
+          ? MultiChatManager(
+        userId: _currentUserId!,
         conversationIds: ['g1', 'conv_2', 'conv_3', 'conv_4', 'conv_5'],
-        apiBaseUrl: 'http://127.0.0.1:8000/api',
+        apiBaseUrl: _apiUrlController.text,
+      )
+          : null,
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required String hint,
+  }) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, color: AppColors.primary3),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary2, width: 2),
+        ),
       ),
     );
   }
@@ -114,6 +299,7 @@ class _MultiChatManagerState extends State<MultiChatManager>
   // WebSocket management
   final Map<String, WebSocketChannel> _channels = {};
   final Map<String, ConversationInfo> _conversationInfos = {};
+  final Map<String, StreamController<Map<String, dynamic>>> _messageControllers = {};
 
   @override
   void initState() {
@@ -129,6 +315,7 @@ class _MultiChatManagerState extends State<MultiChatManager>
 
     // Initialize conversation infos
     for (var convId in widget.conversationIds) {
+      _messageControllers[convId] = StreamController<Map<String, dynamic>>.broadcast(); // ✅ THÊM
       _conversationInfos[convId] = ConversationInfo(conversationId: convId);
     }
 
@@ -140,6 +327,10 @@ class _MultiChatManagerState extends State<MultiChatManager>
   void dispose() {
     _expandController.dispose();
     _disconnectAllWebSockets();
+    for (var controller in _messageControllers.values) {
+      controller.close();
+    }
+    _messageControllers.clear();
     super.dispose();
   }
 
@@ -149,12 +340,63 @@ class _MultiChatManagerState extends State<MultiChatManager>
     }
   }
 
+  void _handleNewMessage(String conversationId, Map<String, dynamic> message) {
+    print('=== Handling new message for $conversationId ===');
+    print('Message data: $message');
+
+    final info = _conversationInfos[conversationId];
+    if (info == null) {
+      print('No conversation info found for $conversationId');
+      return;
+    }
+
+    final messageId = message['id'] as String?;
+    final senderId = message['sender_id'] as String?;
+
+    print('Message ID: $messageId, Sender: $senderId, Current user: ${widget.userId}');
+    print('Selected conversation: $_selectedConversationId');
+
+    // Only increment unread count if:
+    // 1. Message is not from current user
+    // 2. This conversation is not currently selected (being viewed)
+    if (senderId != widget.userId && _selectedConversationId != conversationId) {
+      // Check if this is a new message (not duplicate)
+      if (messageId != null && messageId != info.lastMessageId) {
+        print('✅ Incrementing unread count for $conversationId');
+        if (mounted) {
+          setState(() {
+            info.unreadCount++;
+            info.lastMessageId = messageId;
+          });
+        }
+      } else {
+        print('⚠️ Duplicate message or no message ID, skipping unread increment');
+      }
+    } else if (_selectedConversationId == conversationId) {
+      print('👁️ Currently viewing $conversationId, not incrementing unread');
+      if (mounted) {
+        setState(() {
+          info.lastMessageId = messageId;
+        });
+      }
+    } else if (senderId == widget.userId) {
+      print('📤 Message from current user, skipping unread increment');
+    }
+  }
+
   void _connectWebSocket(String conversationId) {
     try {
+      // Đóng connection cũ nếu có
+      if (_channels.containsKey(conversationId)) {
+        print('🔌 Closing existing WebSocket for $conversationId');
+        _channels[conversationId]?.sink.close();
+        _channels.remove(conversationId);
+      }
+
       final wsUrl = widget.apiBaseUrl.replaceFirst('http', 'ws');
       final uri = Uri.parse('$wsUrl/ws/chat/$conversationId/${widget.userId}');
 
-      print('Connecting WebSocket for $conversationId: $uri');
+      print('🔗 Connecting WebSocket for $conversationId: $uri');
 
       final channel = WebSocketChannel.connect(uri);
       _channels[conversationId] = channel;
@@ -165,23 +407,38 @@ class _MultiChatManagerState extends State<MultiChatManager>
         });
       }
 
-      print('WebSocket connected for $conversationId');
+      print('✅ WebSocket connected for $conversationId');
 
+      // CRITICAL FIX: Setup listener properly
       channel.stream.listen(
             (message) {
-          print('Received message on $conversationId: $message');
+          print('📩 RAW WebSocket message on $conversationId: $message');
           try {
             final data = json.decode(message);
-            print('Parsed data: $data');
+            print('📦 Parsed data: ${json.encode(data)}');
+            print('📋 Message type: ${data['type']}');
+
             if (data['type'] == 'message' && data['message'] != null) {
+              print('✅ Valid message received for $conversationId');
+
+              // ✅ THÊM đoạn này - Broadcast đến ChatWidget
+              if (_messageControllers.containsKey(conversationId)) {
+                print('📡 Broadcasting message to ChatWidget stream');
+                _messageControllers[conversationId]!.add(data['message']);
+              }
+
               _handleNewMessage(conversationId, data['message']);
+            } else {
+              print('⚠️ Not a valid message type or missing message data');
             }
-          } catch (e) {
-            print('Error parsing message for $conversationId: $e');
+          } catch (e, stackTrace) {
+            print('❌ Error parsing message for $conversationId: $e');
+            print('Stack trace: $stackTrace');
+            print('Raw message was: $message');
           }
         },
         onError: (error) {
-          print('WebSocket ERROR for $conversationId: $error');
+          print('❌ WebSocket ERROR for $conversationId: $error');
           if (mounted) {
             setState(() {
               _conversationInfos[conversationId]?.isConnected = false;
@@ -191,13 +448,13 @@ class _MultiChatManagerState extends State<MultiChatManager>
           // Reconnect after 5 seconds
           Future.delayed(const Duration(seconds: 5), () {
             if (mounted) {
-              print('Attempting to reconnect $conversationId...');
+              print('🔄 Attempting to reconnect $conversationId...');
               _connectWebSocket(conversationId);
             }
           });
         },
         onDone: () {
-          print('WebSocket CLOSED for $conversationId');
+          print('🔌 WebSocket CLOSED for $conversationId');
           if (mounted) {
             setState(() {
               _conversationInfos[conversationId]?.isConnected = false;
@@ -207,47 +464,18 @@ class _MultiChatManagerState extends State<MultiChatManager>
           // Reconnect after 5 seconds
           Future.delayed(const Duration(seconds: 5), () {
             if (mounted) {
-              print('Attempting to reconnect $conversationId...');
+              print('🔄 Attempting to reconnect $conversationId...');
               _connectWebSocket(conversationId);
             }
           });
         },
+        cancelOnError: false,
       );
     } catch (e) {
-      print('Error connecting WebSocket for $conversationId: $e');
+      print('❌ Error connecting WebSocket for $conversationId: $e');
       if (mounted) {
         setState(() {
           _conversationInfos[conversationId]?.isConnected = false;
-        });
-      }
-    }
-  }
-
-  void _handleNewMessage(String conversationId, Map<String, dynamic> message) {
-    final info = _conversationInfos[conversationId];
-    if (info == null) return;
-
-    final messageId = message['id'] as String?;
-    final senderId = message['sender_id'] as String?;
-
-    // Only increment unread count if:
-    // 1. Message is not from current user
-    // 2. This conversation is not currently selected (being viewed)
-    if (senderId != widget.userId && _selectedConversationId != conversationId) {
-      // Check if this is a new message (not duplicate)
-      if (messageId != null && messageId != info.lastMessageId) {
-        if (mounted) {
-          setState(() {
-            info.unreadCount++;
-            info.lastMessageId = messageId;
-          });
-        }
-      }
-    } else if (_selectedConversationId == conversationId) {
-      // If viewing this conversation, update last message but don't increment unread
-      if (mounted) {
-        setState(() {
-          info.lastMessageId = messageId;
         });
       }
     }
@@ -273,16 +501,14 @@ class _MultiChatManagerState extends State<MultiChatManager>
         .fold(0, (sum, info) => sum + info.unreadCount);
   }
 
-  // Placeholder function for conversation avatar
   String? _getConversationAvatar(String conversationId) {
     // TODO: Implement avatar fetching logic
     return null;
   }
 
-  // Placeholder function for conversation name
-  String? _getConversationName(String conversationId) {
-    // TODO: Implement name fetching logic
-    return null;
+  String _getConversationName(String conversationId) {
+    // TODO: Implement real name fetching logic from API
+    return conversationId;
   }
 
   void _toggleExpanded() {
@@ -298,12 +524,12 @@ class _MultiChatManagerState extends State<MultiChatManager>
   }
 
   void _selectConversation(String conversationId) {
+    print('🎯 Selecting conversation: $conversationId (previous: $_selectedConversationId)');
     setState(() {
       if (_selectedConversationId == conversationId) {
         _selectedConversationId = null;
       } else {
         _selectedConversationId = conversationId;
-        // Mark as read when opening
         _markAsRead(conversationId);
       }
     });
@@ -314,7 +540,7 @@ class _MultiChatManagerState extends State<MultiChatManager>
     return Stack(
       alignment: Alignment.bottomRight,
       children: [
-        // Chat popup on the left
+        // Chat popup - CRITICAL: Use UniqueKey for each conversation change
         if (_selectedConversationId != null)
           Positioned(
             bottom: 20,
@@ -322,7 +548,6 @@ class _MultiChatManagerState extends State<MultiChatManager>
             child: _buildChatPopup(_selectedConversationId!),
           ),
 
-        // Conversation list
         if (_isExpanded)
           Positioned(
             bottom: 100,
@@ -330,7 +555,6 @@ class _MultiChatManagerState extends State<MultiChatManager>
             child: _buildConversationList(),
           ),
 
-        // Main FAB button
         Positioned(
           bottom: 20,
           right: 20,
@@ -380,7 +604,6 @@ class _MultiChatManagerState extends State<MultiChatManager>
             ),
           ),
         ),
-        // Total unread badge
         if (totalUnread > 0 && !_isExpanded)
           Positioned(
             top: -4,
@@ -464,7 +687,7 @@ class _MultiChatManagerState extends State<MultiChatManager>
       bool isConnected,
       ) {
     final avatarUrl = _getConversationAvatar(conversationId);
-    final name = _getConversationName(conversationId) ?? conversationId;
+    final name = _getConversationName(conversationId);
 
     return GestureDetector(
       onTap: () => _selectConversation(conversationId),
@@ -512,7 +735,6 @@ class _MultiChatManagerState extends State<MultiChatManager>
                       ),
                     ),
                   ),
-                  // Connection status indicator
                   Positioned(
                     bottom: 0,
                     right: 0,
@@ -532,7 +754,6 @@ class _MultiChatManagerState extends State<MultiChatManager>
                 ],
               ),
             ),
-            // Unread badge - chấm đỏ thông báo
             if (unreadCount > 0)
               Positioned(
                 top: -4,
@@ -577,7 +798,12 @@ class _MultiChatManagerState extends State<MultiChatManager>
   }
 
   Widget _buildChatPopup(String conversationId) {
-    return Material(
+    print('🏗️ Building ChatPopup for: $conversationId');
+
+    // CRITICAL: Create completely new widget instance with UniqueKey
+    // This ensures Flutter creates a new State object
+    return UniqueKey() != null
+        ? Material(
       elevation: 20,
       borderRadius: BorderRadius.circular(20),
       shadowColor: AppColors.primary2.withOpacity(0.3),
@@ -593,18 +819,20 @@ class _MultiChatManagerState extends State<MultiChatManager>
           ),
         ),
         child: ChatWidget(
+          key: ValueKey('chat_$conversationId'),
           userId: widget.userId,
           conversationId: conversationId,
           apiBaseUrl: widget.apiBaseUrl,
+          conversationName: _getConversationName(conversationId),
           onClose: () {
             setState(() {
               _selectedConversationId = null;
             });
           },
-          // Pass the existing WebSocket channel to avoid duplicate connections
-          channel: _channels[conversationId],
+          messageStream: _messageControllers[conversationId]?.stream,
         ),
       ),
-    );
+    )
+        : const SizedBox.shrink();
   }
 }

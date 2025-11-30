@@ -230,6 +230,7 @@ class _ChatDemoState extends State<ChatDemo> {
         userId: userIdController.text,
         conversationId: conversationIdController.text,
         apiBaseUrl: apiUrlController.text,
+          conversationName: 'Test',
         onClose: () {
           setState(() {
             showChat = false;
@@ -285,16 +286,20 @@ class ChatWidget extends StatefulWidget {
   final String userId;
   final String conversationId;
   final String apiBaseUrl;
+  final String conversationName;
   final VoidCallback onClose;
   final WebSocketChannel? channel;
+  final Stream<Map<String, dynamic>>? messageStream;
 
   const ChatWidget({
     super.key,
     required this.userId,
     required this.conversationId,
     required this.apiBaseUrl,
+    required this.conversationName,
     required this.onClose,
-    this.channel
+    this.channel,
+    this.messageStream,
   });
 
   @override
@@ -314,10 +319,14 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
   late AnimationController _slideController;
   late Animation<Offset> _slideAnimation;
   final Map<String, GlobalKey> _messageKeys = {};
+  StreamSubscription<Map<String, dynamic>>? _messageSubscription;
 
   @override
   void initState() {
     super.initState();
+
+    print('🚀 ChatWidget initState for conversation: ${widget.conversationId}');
+
     _slideController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
@@ -330,8 +339,13 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
       curve: Curves.easeOutCubic,
     ));
     _slideController.forward();
+
+    // ✅ QUAN TRỌNG: Clear messages cũ trước khi load mới
+    messages.clear();
+
     loadMessages();
     connectWebSocket();
+    _listenToMessageStream();
   }
 
   @override
@@ -342,6 +356,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
     _slideController.dispose();
     _focusNode.dispose();
     _messageKeys.clear();
+    _messageSubscription?.cancel();
     super.dispose();
   }
 
@@ -379,11 +394,14 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
     }
   }
 
+  // Phần cần sửa trong _ChatWidgetState
+
+// 1. Sửa hàm connectWebSocket - tránh duplicate listener
   void connectWebSocket() {
     try {
-      // Nếu đã có channel từ parent (MultiChatManager), dùng luôn
+      // Nếu có channel từ parent (MultiChatManager), sử dụng nó
       if (widget.channel != null) {
-        print('Using existing WebSocket channel from parent');
+        print('✅ Using existing WebSocket channel from parent for ${widget.conversationId}');
         channel = widget.channel;
 
         if (mounted) {
@@ -392,50 +410,14 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
           });
         }
 
-        // Listen to existing channel
-        channel!.stream.listen(
-              (message) {
-            print('ChatWidget received message: $message');
-            try {
-              final data = json.decode(message);
-              if (data['type'] == 'message' && data['message'] != null) {
-                final newMsg = ChatMessage.fromJson(data['message']);
-                if (mounted) {
-                  setState(() {
-                    if (!messages.any((m) => m.id == newMsg.id)) {
-                      messages.add(newMsg);
-                      print('Added new message: ${newMsg.id}');
-                    }
-                  });
-                  scrollToBottom();
-                }
-              }
-            } catch (e) {
-              print('Error parsing message in ChatWidget: $e');
-            }
-          },
-          onError: (error) {
-            print('WebSocket error in ChatWidget: $error');
-            if (mounted) {
-              setState(() {
-                isConnected = false;
-              });
-            }
-          },
-          onDone: () {
-            print('WebSocket closed in ChatWidget');
-            if (mounted) {
-              setState(() {
-                isConnected = false;
-              });
-            }
-          },
-        );
+        // ❌ QUAN TRỌNG: KHÔNG THÊM LISTENER MỚI
+        // Parent (MultiChatManager) đã listen rồi
+        print('⚠️ Skipping duplicate listener setup - managed by parent');
         return;
       }
 
-      // Nếu không có channel, tạo mới
-      print('Creating new WebSocket channel');
+      // Chỉ tạo channel mới khi standalone mode (không có parent)
+      print('🔗 Creating new WebSocket channel for ${widget.conversationId}');
       final wsUrl = widget.apiBaseUrl.replaceFirst('http', 'ws');
       final uri = Uri.parse(
           '$wsUrl/ws/chat/${widget.conversationId}/${widget.userId}');
@@ -448,9 +430,10 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
         });
       }
 
+      // Chỉ thêm listener trong standalone mode
       channel!.stream.listen(
             (message) {
-          print('ChatWidget received message: $message');
+          print('📩 ChatWidget received message: $message');
           try {
             final data = json.decode(message);
             if (data['type'] == 'message' && data['message'] != null) {
@@ -459,18 +442,18 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                 setState(() {
                   if (!messages.any((m) => m.id == newMsg.id)) {
                     messages.add(newMsg);
-                    print('Added new message: ${newMsg.id}');
+                    print('✅ Added new message: ${newMsg.id}');
                   }
                 });
                 scrollToBottom();
               }
             }
           } catch (e) {
-            print('Error parsing message in ChatWidget: $e');
+            print('❌ Error parsing message in ChatWidget: $e');
           }
         },
         onError: (error) {
-          print('WebSocket error in ChatWidget: $error');
+          print('❌ WebSocket error in ChatWidget: $error');
           if (mounted) {
             setState(() {
               isConnected = false;
@@ -478,7 +461,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
           }
         },
         onDone: () {
-          print('WebSocket closed in ChatWidget');
+          print('🔌 WebSocket closed in ChatWidget');
           if (mounted) {
             setState(() {
               isConnected = false;
@@ -487,13 +470,205 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
         },
       );
     } catch (e) {
-      print('Error connecting WebSocket in ChatWidget: $e');
+      print('❌ Error connecting WebSocket in ChatWidget: $e');
       if (mounted) {
         setState(() {
           isConnected = false;
         });
       }
     }
+  }
+
+  void _listenToMessageStream() {
+    if (widget.messageStream != null) {
+      print('🎧 ChatWidget subscribing to message stream for ${widget.conversationId}');
+      _messageSubscription = widget.messageStream!.listen(
+            (messageData) {
+          print('📨 ChatWidget received message from stream: $messageData');
+          try {
+            final newMsg = ChatMessage.fromJson(messageData);
+            if (mounted) {
+              setState(() {
+                if (!messages.any((m) => m.id == newMsg.id)) {
+                  messages.add(newMsg);
+                  print('✅ Added message to UI: ${newMsg.id} from ${newMsg.senderId}');
+                } else {
+                  print('⚠️ Duplicate message, skipping: ${newMsg.id}');
+                }
+              });
+              scrollToBottom();
+            }
+          } catch (e) {
+            print('❌ Error processing message from stream: $e');
+          }
+        },
+        onError: (error) {
+          print('❌ Error in message stream: $error');
+        },
+      );
+    } else {
+      print('⚠️ No message stream provided from parent');
+    }
+  }
+
+// 2. Sửa hàm sendMessage - thêm tin nhắn ngay vào UI (optimistic update)
+
+
+// 4. Sửa phần hiển thị trạng thái kết nối trong _buildInputArea
+  Widget _buildInputArea() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: Colors.grey[200]!),
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.primary5.withOpacity(0.3),
+                      AppColors.primary5.withOpacity(0.1),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: uploadFile,
+                    child: const Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Icon(
+                        Icons.attach_file_rounded,
+                        color: AppColors.primary2,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Container(
+                  constraints: const BoxConstraints(maxHeight: 120),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary5.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.primary5.withOpacity(0.3),
+                    ),
+                  ),
+                  child: TextField(
+                    controller: messageController,
+                    focusNode: _focusNode,
+                    decoration: const InputDecoration(
+                      hintText: 'Nhập tin nhắn... (Enter: gửi, Shift+Enter: xuống hàng)',
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      hintStyle: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    maxLines: null,
+                    keyboardType: TextInputType.multiline,
+                    textInputAction: TextInputAction.newline,
+                    onSubmitted: (value) {
+                      if (value.trim().isNotEmpty) {
+                        sendMessage();
+                      }
+                    },
+                    onChanged: (value) {
+                      setState(() {});
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: messageController.text.trim().isEmpty
+                        ? [Colors.grey[300]!, Colors.grey[400]!]
+                        : [AppColors.primary2, AppColors.primary3],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: messageController.text.trim().isEmpty
+                      ? []
+                      : [
+                    BoxShadow(
+                      color: AppColors.primary2.withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: messageController.text.trim().isEmpty
+                        ? null
+                        : sendMessage,
+                    child: const Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Icon(
+                        Icons.send_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          // QUAN TRỌNG: Chỉ hiển thị "Đang kết nối lại" khi thực sự KHÔNG kết nối
+          // Và channel != null (đang cố kết nối)
+          if (!isConnected && channel != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 6,
+                    height: 6,
+                    decoration: const BoxDecoration(
+                      color: Colors.orange,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  const Text(
+                    'Đang kết nối lại...',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.orange,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   void scrollToBottom() {
@@ -511,21 +686,43 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
   void sendMessage() {
     if (messageController.text.trim().isEmpty || channel == null) return;
 
+    final content = messageController.text.trim();
+    final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+
+    // Tạo tin nhắn tạm thời để hiển thị ngay
+    final tempMessage = ChatMessage(
+      id: tempId,
+      conversationId: widget.conversationId,
+      senderId: widget.userId,
+      content: content,
+      attachments: [],
+      createdAt: DateTime.now().toIso8601String(),
+      replyTo: replyingTo?.id,
+    );
+
+    // Thêm tin nhắn tạm vào UI ngay lập tức
+    setState(() {
+      // messages.add(tempMessage);
+      replyingTo = null;
+    });
+
+    messageController.clear();
+    scrollToBottom();
+
+    // Gửi qua WebSocket
     final messageData = {
       'type': 'message',
       'sender_id': widget.userId,
-      'content': messageController.text.trim(),
+      'content': content,
       'attachments': [],
       if (replyingTo != null) 'reply_to': replyingTo!.id,
     };
 
+    print('Sending message: ${json.encode(messageData)}');
     channel!.sink.add(json.encode(messageData));
-    messageController.clear();
-    setState(() {
-      replyingTo = null;
-    });
   }
 
+// 3. Sửa hàm uploadFile - tương tự optimistic update
   Future<void> uploadFile() async {
     try {
       print('=== Starting file upload ===');
@@ -563,6 +760,33 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
 
           final isMedia = _isImageFile(data['mime']) || _isVideoFile(data['mime']);
 
+          // Tạo tin nhắn tạm để hiển thị ngay
+          final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
+          final tempMessage = ChatMessage(
+            id: tempId,
+            conversationId: widget.conversationId,
+            senderId: widget.userId,
+            content: isMedia ? '' : '📎 ${data['filename']}',
+            attachments: [
+              {
+                'file_id': data['file_id'],
+                'filename': data['filename'],
+                'mime': data['mime'],
+                'url': data['url'],
+              }
+            ],
+            createdAt: DateTime.now().toIso8601String(),
+            replyTo: replyingTo?.id,
+          );
+
+          // Thêm vào UI ngay
+          setState(() {
+            messages.add(tempMessage);
+            replyingTo = null;
+          });
+          scrollToBottom();
+
+          // Gửi qua WebSocket
           final messageData = {
             'type': 'message',
             'sender_id': widget.userId,
@@ -580,9 +804,6 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
 
           print('Sending message with attachment: ${json.encode(messageData)}');
           channel!.sink.add(json.encode(messageData));
-          setState(() {
-            replyingTo = null;
-          });
         } else {
           print('Upload failed or WebSocket not connected');
         }
@@ -745,26 +966,30 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                 color: Colors.white, size: 22),
           ),
           const SizedBox(width: 12),
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Chat Room',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+          // ✅ SỬA PHẦN NÀY - Hiển thị tên conversation động
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.conversationName, // ✅ THAY ĐỔI Ở ĐÂY
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                'Real-time messaging',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
+                const SizedBox(height: 2),
+                Text(
+                  isConnected ? 'Đang hoạt động' : 'Mất kết nối',
+                  style: TextStyle(
+                    color: isConnected ? Colors.white70 : Colors.white54,
+                    fontSize: 12,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(width: 8),
           Container(
@@ -1600,159 +1825,6 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildInputArea() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Colors.grey[200]!),
-        ),
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(20),
-          bottomRight: Radius.circular(20),
-        ),
-      ),
-      child: Column(
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.primary5.withOpacity(0.3),
-                      AppColors.primary5.withOpacity(0.1),
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: uploadFile,
-                    child: const Padding(
-                      padding: EdgeInsets.all(10),
-                      child: Icon(
-                        Icons.attach_file_rounded,
-                        color: AppColors.primary2,
-                        size: 22,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Container(
-                  constraints: const BoxConstraints(maxHeight: 120),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary5.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppColors.primary5.withOpacity(0.3),
-                    ),
-                  ),
-                  child: TextField(
-                    controller: messageController,
-                    focusNode: _focusNode,
-                    decoration: const InputDecoration(
-                      hintText: 'Nhập tin nhắn... (Enter: gửi, Shift+Enter: xuống hàng)',
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                      hintStyle: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    maxLines: null,
-                    keyboardType: TextInputType.multiline,
-                    textInputAction: TextInputAction.newline,
-                    onSubmitted: (value) {
-                      if (value.trim().isNotEmpty) {
-                        sendMessage();
-                      }
-                    },
-                    onChanged: (value) {
-                      setState(() {});
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: messageController.text.trim().isEmpty
-                        ? [Colors.grey[300]!, Colors.grey[400]!]
-                        : [AppColors.primary2, AppColors.primary3],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: messageController.text.trim().isEmpty
-                      ? []
-                      : [
-                    BoxShadow(
-                      color: AppColors.primary2.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: messageController.text.trim().isEmpty
-                        ? null
-                        : sendMessage,
-                    child: const Padding(
-                      padding: EdgeInsets.all(10),
-                      child: Icon(
-                        Icons.send_rounded,
-                        color: Colors.white,
-                        size: 22,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          if (!isConnected)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 6,
-                    height: 6,
-                    decoration: const BoxDecoration(
-                      color: Colors.orange,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  const Text(
-                    'Đang kết nối lại...',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.orange,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
 
   String _formatTime(String timestamp) {
     try {
