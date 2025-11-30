@@ -7,7 +7,9 @@ import 'dart:async';
 import 'package:file_picker/file_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:video_player/video_player.dart';
-import 'dart:html' as html; // For web download
+import 'dart:html' as html;
+
+import 'package:whms/configs/config_cubit.dart'; // For web download
 
 void main() {
   runApp(const MyApp());
@@ -362,13 +364,13 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
 
   // Placeholder functions for avatar and username
   String? _getAvatarUrl(String userId) {
-    // TODO: Implement avatar fetching logic
-    return null;
+    final cfC = ConfigsCubit.fromContext(context);
+    return cfC.usersMap[userId]?.avt;
   }
 
   String? _getUserDisplayName(String userId) {
-    // TODO: Implement username fetching logic
-    return null;
+    final cfC = ConfigsCubit.fromContext(context);
+    return cfC.usersMap[userId]?.name;
   }
 
   Future<void> loadMessages() async {

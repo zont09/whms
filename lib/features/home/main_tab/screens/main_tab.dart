@@ -1,5 +1,7 @@
+import 'package:whms/configs/app_configs.dart';
 import 'package:whms/configs/color_config.dart';
 import 'package:whms/features/chat/view/floating_chat_box.dart';
+import 'package:whms/features/chat/view/list_chat_screen.dart';
 import 'package:whms/features/home/main_tab/views/meeting/meeting_main_view.dart';
 import 'package:whms/features/home/main_tab/views/personal/personal_master_view.dart';
 import 'package:whms/features/home/main_tab/views/task/task_main_view.dart';
@@ -131,7 +133,11 @@ class _MainTabState extends State<MainTab> {
                                             cubit.listProject,
                                             cubit,
                                           ),
-
+                                        MultiChatManager(
+                                          userId: cfC.user.id,
+                                          conversationIds: cfC.user.scopes,
+                                          apiBaseUrl: AppConfigs.chatAPI,
+                                        )
                                       ],
                                     ),
                               ),

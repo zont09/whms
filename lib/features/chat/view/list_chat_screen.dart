@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:whms/configs/config_cubit.dart';
 import 'dart:convert';
 
 import 'package:whms/features/chat/view/chat_popup.dart';
@@ -502,13 +503,15 @@ class _MultiChatManagerState extends State<MultiChatManager>
   }
 
   String? _getConversationAvatar(String conversationId) {
-    // TODO: Implement avatar fetching logic
+    // final cfC =ConfigsCubit.fromContext(context);
+    // final scopeAvt = cfC.allScopeMap[conversationId]?.;
     return null;
   }
 
   String _getConversationName(String conversationId) {
-    // TODO: Implement real name fetching logic from API
-    return conversationId;
+    final cfC =ConfigsCubit.fromContext(context);
+    final scope = cfC.allScopeMap[conversationId]?.title;
+    return scope ?? conversationId;
   }
 
   void _toggleExpanded() {
