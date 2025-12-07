@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:whms/configs/color_config.dart';
 import 'package:whms/defines/type_assignment_define.dart';
 import 'package:whms/features/home/main_tab/blocs/detail_assignment_cubit.dart';
+import 'package:whms/features/home/main_tab/widgets/task/recommend/recommend_button.dart';
 import 'package:whms/features/manager/widgets/scope_tab/list_member_dropdown.dart';
 import 'package:whms/untils/app_text.dart';
 import 'package:whms/untils/scale_utils.dart';
@@ -120,6 +121,10 @@ class ListUserByRoles extends StatelessWidget {
                                           ScaleUtils.scaleSize(12, context)))
                             ])))))
               ])),
+      if(cubit.wu.type == TypeAssignmentDefine.task.title)
+        IgnorePointer(
+            ignoring: !isHandlerEdit,
+            child: EmployeeRecommendationButton(task: cubit.wu,)),
       IgnorePointer(
         ignoring: !isOwnerEdit,
         child: ListMemberDropdown(
