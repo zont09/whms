@@ -148,8 +148,8 @@ class ButtonAction extends StatelessWidget {
                           failedTitle: AppText.titleDeleteFailed.text);
                     }
                   },
-                  colorBackground: ColorConfig.error,
-                  colorBorder: ColorConfig.error,
+                  colorBackground: ColorConfig.primary2,
+                  colorBorder: ColorConfig.primary2,
                   paddingHor: 18,
                   sizeTitle: 18,
                 ),

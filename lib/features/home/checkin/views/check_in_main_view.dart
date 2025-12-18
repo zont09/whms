@@ -63,7 +63,7 @@ class CheckInMainView extends StatelessWidget {
                                 cubit.changeTab(1);
                               },
                               child: Image.asset(
-                                'assets/images/icons/ic_add_task.png',
+                                'assets/images/icons/ic_add_meeting.png',
                                 height: ScaleUtils.scaleSize(24, context),
                               ),
                             ),

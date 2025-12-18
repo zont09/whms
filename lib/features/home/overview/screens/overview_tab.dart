@@ -21,7 +21,7 @@ class OverviewTab extends StatelessWidget {
           Container(
             height: double.infinity,
             width: double.infinity,
-            color: ColorConfig.primary3,
+            color: ColorConfig.primary1,
           ),
           BlocProvider(
             create: (context) => OverviewTabCubit(ConfigsCubit.fromContext(context))..initData(context),
@@ -46,7 +46,7 @@ class OverviewTab extends StatelessWidget {
                             Container(
                               height: double.infinity,
                               width: double.infinity,
-                              color: Colors.white,
+                              color: ColorConfig.whiteBackground,
                               child: s == 0
                                   ? LoadingWidget()
                                   : OverviewMainView(tab: tab, cubit: cubit),

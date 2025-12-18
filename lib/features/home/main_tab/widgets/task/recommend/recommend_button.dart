@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:whms/features/home/main_tab/widgets/task/recommend/recommendation_dialog.dart';
 import 'package:whms/models/working_unit_model.dart';
 import 'package:whms/models/user_model.dart';
+import 'package:whms/widgets/avatar_item.dart';
 
-/// Widget button để gợi ý nhân sự
-/// Chỉ cần truyền WorkingUnitModel và danh sách users
 class EmployeeRecommendationButton extends StatelessWidget {
   final WorkingUnitModel task;
-  final List<UserModel>? availableUsers; // Null = lấy từ API
-  final Function(List<String> selectedUserIds)? onUsersSelected;
-  final String? apiUrl; // Tùy chọn: override API URL
+  final List<UserModel>? availableUsers;
+  final Function(String selectedUserIds)? onUsersSelected;
+  final String? apiUrl;
 
   const EmployeeRecommendationButton({
     Key? key,
@@ -21,12 +20,39 @@ class EmployeeRecommendationButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      onPressed: () => _showRecommendationDialog(context),
-      icon: const Icon(Icons.person_search, size: 20),
-      label: const Text('Gợi ý nhân sự'),
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Theme.of(context).primaryColor,
+            Theme.of(context).primaryColor.withOpacity(0.8),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).primaryColor.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showRecommendationDialog(context),
+          borderRadius: BorderRadius.circular(12),
+          child: const Padding(
+            padding: EdgeInsets.all(12),
+            child: Icon(
+              Icons.psychology_rounded,
+              size: 24,
+              color: Colors.white,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -37,18 +63,20 @@ class EmployeeRecommendationButton extends StatelessWidget {
       builder: (context) => EmployeeRecommendationDialog(
         task: task,
         availableUsers: availableUsers,
-        onUsersSelected: onUsersSelected,
+        onUserSelected: onUsersSelected,
         apiUrl: apiUrl,
+        avatarBuilder: (v) {
+          return AvatarItem(v, size: 56);
+        },
       ),
     );
   }
 }
-
 /// Icon button version - nhỏ gọn hơn
 class EmployeeRecommendationIconButton extends StatelessWidget {
   final WorkingUnitModel task;
   final List<UserModel>? availableUsers;
-  final Function(List<String> selectedUserIds)? onUsersSelected;
+  final Function(String selectedUserIds)? onUsersSelected;
   final String? apiUrl;
 
   const EmployeeRecommendationIconButton({
@@ -74,8 +102,11 @@ class EmployeeRecommendationIconButton extends StatelessWidget {
       builder: (context) => EmployeeRecommendationDialog(
         task: task,
         availableUsers: availableUsers,
-        onUsersSelected: onUsersSelected,
+        onUserSelected: onUsersSelected,
         apiUrl: apiUrl,
+        avatarBuilder: (v) {
+          return AvatarItem(v, size: 56);
+        },
       ),
     );
   }

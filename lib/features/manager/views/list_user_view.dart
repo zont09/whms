@@ -72,6 +72,7 @@ class ListUserView extends StatelessWidget {
                     ZButton(
                         title: AppText.btnAddStaff.text,
                         icon: 'assets/images/icons/ic_add.png',
+                        colorIcon: ColorConfig.primary2,
                         colorBackground: Colors.white,
                         colorBorder: Colors.white,
                         colorTitle: ColorConfig.primary2,

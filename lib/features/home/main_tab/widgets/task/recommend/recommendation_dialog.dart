@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:whms/configs/config_cubit.dart';
 import 'package:whms/models/recommend_model.dart';
 import 'package:whms/models/working_unit_model.dart';
 import 'package:whms/models/user_model.dart';
 import 'package:whms/services/recommend_service.dart';
+import 'package:whms/untils/cache_utils.dart';
 
 class EmployeeRecommendationDialog extends StatefulWidget {
   final WorkingUnitModel task;
   final List<UserModel>? availableUsers;
-  final Function(List<String> selectedUserIds)? onUsersSelected;
+  final Function(String selectedUserId)? onUserSelected; // Đổi thành chọn 1
   final String? apiUrl;
+  final Widget Function(String employeeId)? avatarBuilder; // Hàm build avatar
 
   const EmployeeRecommendationDialog({
     Key? key,
     required this.task,
     this.availableUsers,
-    this.onUsersSelected,
+    this.onUserSelected,
     this.apiUrl,
+    this.avatarBuilder,
   }) : super(key: key);
 
   @override
@@ -25,17 +29,24 @@ class EmployeeRecommendationDialog extends StatefulWidget {
 
 class _EmployeeRecommendationDialogState
     extends State<EmployeeRecommendationDialog> {
+  static const Color primary1 = Color(0xFF0448db);
+  static const Color primary2 = Color(0xFF006df5);
+  static const Color primary3 = Color(0xFF0086f3);
+  static const Color primary4 = Color(0xFF0099d8);
+  static const Color primary5 = Color(0xFFabc5ff);
+
   final _service = RecommendationService();
 
   bool _isLoading = false;
   String? _error;
   RecommendationResponseModel? _response;
-  final Set<String> _selectedUserIds = {};
+  String? _selectedUserId; // Chỉ chọn 1
+  late final Map<String, UserModel> mapUser;
 
   @override
   void initState() {
     super.initState();
-    // Set custom API URL if provided
+    mapUser = ConfigsCubit.fromContext(context).usersMap;
     if (widget.apiUrl != null) {
       _service.baseUrl = widget.apiUrl!;
     }
@@ -72,7 +83,7 @@ class _EmployeeRecommendationDialogState
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
         width: MediaQuery.of(context).size.width * 0.9,
         constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
@@ -81,18 +92,33 @@ class _EmployeeRecommendationDialogState
           children: [
             // Header
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.blue,
+                gradient: LinearGradient(
+                  colors: [primary2, primary3],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
+                  topLeft: Radius.circular(20),
+                  topRight: Radius.circular(20),
                 ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.person_search, color: Colors.white, size: 28),
-                  const SizedBox(width: 12),
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.psychology,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,40 +153,59 @@ class _EmployeeRecommendationDialogState
             ),
 
             // Body
-            Expanded(
-              child: _buildBody(),
-            ),
+            Expanded(child: _buildBody()),
 
             // Footer with actions
             if (_response != null && _response!.recommendations.isNotEmpty)
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  border: Border(top: BorderSide(color: Colors.grey[300]!)),
+                  color: Colors.grey[50],
+                  border: Border(top: BorderSide(color: Colors.grey[200]!)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Đã chọn: ${_selectedUserIds.length}',
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      _selectedUserId != null
+                          ? 'Đã chọn 1 ứng viên'
+                          : 'Chưa chọn',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: _selectedUserId != null
+                            ? primary2
+                            : Colors.grey[600],
+                      ),
                     ),
                     Row(
                       children: [
                         TextButton(
                           onPressed: () => Navigator.pop(context),
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.grey[700],
+                          ),
                           child: const Text('Hủy'),
                         ),
                         const SizedBox(width: 8),
                         ElevatedButton(
-                          onPressed: _selectedUserIds.isEmpty
+                          onPressed: _selectedUserId == null
                               ? null
                               : () {
-                            widget.onUsersSelected
-                                ?.call(_selectedUserIds.toList());
-                            Navigator.pop(context);
-                          },
+                                  widget.onUserSelected?.call(_selectedUserId!);
+                                  Navigator.pop(context);
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: primary2,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 0,
+                          ),
                           child: const Text('Xác nhận'),
                         ),
                       ],
@@ -176,13 +221,37 @@ class _EmployeeRecommendationDialogState
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 16),
-            Text('Đang phân tích và tìm nhân sự phù hợp...'),
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  width: 60,
+                  height: 60,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    valueColor: AlwaysStoppedAnimation<Color>(primary3),
+                  ),
+                ),
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: primary5.withOpacity(0.3),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.psychology, color: primary2, size: 24),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Đang phân tích và tìm nhân sự phù hợp...',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+            ),
           ],
         ),
       );
@@ -195,8 +264,19 @@ class _EmployeeRecommendationDialogState
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 64, color: Colors.red),
-              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.red[50],
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.error_outline,
+                  size: 64,
+                  color: Colors.red[400],
+                ),
+              ),
+              const SizedBox(height: 20),
               const Text(
                 'Không thể tải gợi ý',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -205,13 +285,24 @@ class _EmployeeRecommendationDialogState
               Text(
                 _error!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.red),
+                style: TextStyle(color: Colors.grey[600]),
               ),
               const SizedBox(height: 24),
               ElevatedButton.icon(
                 onPressed: _loadRecommendations,
                 icon: const Icon(Icons.refresh),
                 label: const Text('Thử lại'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primary2,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
               ),
             ],
           ),
@@ -220,23 +311,34 @@ class _EmployeeRecommendationDialogState
     }
 
     if (_response == null || _response!.recommendations.isEmpty) {
-      return const Center(
+      return Center(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.person_off, size: 64, color: Colors.grey),
-              SizedBox(height: 16),
-              Text(
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.person_off,
+                  size: 64,
+                  color: Colors.grey[400],
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
                 'Không tìm thấy nhân sự phù hợp',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Text(
                 'Hệ thống chưa có đủ dữ liệu để gợi ý',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey),
+                style: TextStyle(color: Colors.grey[600]),
               ),
             ],
           ),
@@ -248,15 +350,24 @@ class _EmployeeRecommendationDialogState
       children: [
         // Stats header
         Container(
-          padding: const EdgeInsets.all(16),
-          color: Colors.blue[50],
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [primary5.withOpacity(0.3), primary5.withOpacity(0.1)],
+            ),
+          ),
           child: Row(
             children: [
+              Icon(Icons.auto_awesome, color: primary2, size: 20),
+              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   'Tìm thấy ${_response!.recommendations.length} nhân sự phù hợp '
-                      '(từ ${_response!.totalCandidates} ứng viên)',
-                  style: const TextStyle(fontWeight: FontWeight.w500),
+                  '(từ ${_response!.totalCandidates} ứng viên)',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: primary1,
+                  ),
                 ),
               ),
             ],
@@ -270,7 +381,7 @@ class _EmployeeRecommendationDialogState
             itemCount: _response!.recommendations.length,
             itemBuilder: (context, index) {
               final rec = _response!.recommendations[index];
-              final isSelected = _selectedUserIds.contains(rec.employeeId);
+              final isSelected = _selectedUserId == rec.employeeId;
 
               return _buildRecommendationCard(rec, index + 1, isSelected);
             },
@@ -281,217 +392,315 @@ class _EmployeeRecommendationDialogState
   }
 
   Widget _buildRecommendationCard(
-      EmployeeRecommendationModel rec,
-      int rank,
-      bool isSelected,
-      ) {
+    EmployeeRecommendationModel rec,
+    int rank,
+    bool isSelected,
+  ) {
     final scorePercent = (rec.finalScore * 100).toStringAsFixed(1);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: isSelected ? 4 : 2,
-      color: isSelected ? Colors.blue[50] : null,
-      child: InkWell(
-        onTap: () {
-          setState(() {
-            if (isSelected) {
-              _selectedUserIds.remove(rec.employeeId);
-            } else {
-              _selectedUserIds.add(rec.employeeId);
-            }
-          });
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header row
-              Row(
-                children: [
-                  // Rank badge
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      color: _getRankColor(rank),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Text(
-                        '$rank',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-
-                  // Name and info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isSelected ? primary2 : Colors.grey[200]!,
+          width: isSelected ? 2 : 1,
+        ),
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: isSelected
+                ? primary5.withOpacity(0.3)
+                : Colors.black.withOpacity(0.05),
+            blurRadius: isSelected ? 12 : 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              _selectedUserId = isSelected ? null : rec.employeeId;
+            });
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header row
+                Row(
+                  children: [
+                    // Avatar
+                    Stack(
                       children: [
-                        Text(
-                          rec.name,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          rec.email,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[600],
+                        widget.avatarBuilder != null &&
+                                mapUser[rec.employeeId] != null &&
+                                mapUser[rec.employeeId]!.avt.isNotEmpty
+                            ? widget.avatarBuilder!(
+                                mapUser[rec.employeeId]!.avt,
+                              )
+                            : Container(
+                                width: 56,
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [primary2, primary4],
+                                  ),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    rec.name[0].toUpperCase(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                        // Rank badge
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: _getRankColor(rank),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '$rank',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
                       ],
                     ),
-                  ),
+                    const SizedBox(width: 16),
 
-                  // Checkbox
-                  Checkbox(
-                    value: isSelected,
-                    onChanged: (value) {
-                      setState(() {
-                        if (value == true) {
-                          _selectedUserIds.add(rec.employeeId);
-                        } else {
-                          _selectedUserIds.remove(rec.employeeId);
-                        }
-                      });
-                    },
-                  ),
-                ],
-              ),
+                    // Name and info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            rec.name,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            rec.email,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          if (rec.major.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Icon(Icons.school, size: 14, color: primary3),
+                                const SizedBox(width: 4),
+                                Expanded(
+                                  child: Text(
+                                    rec.major,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[700],
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
 
-              const SizedBox(height: 12),
+                    // Radio button
+                    Radio<String>(
+                      value: rec.employeeId,
+                      groupValue: _selectedUserId,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedUserId = value;
+                        });
+                      },
+                      activeColor: primary2,
+                    ),
+                  ],
+                ),
 
-              // Stats row
-              Row(
-                children: [
-                  _buildStatChip(
-                    Icons.score,
-                    'Điểm: $scorePercent%',
-                    Colors.blue,
-                  ),
-                  const SizedBox(width: 8),
-                  _buildStatChip(
-                    Icons.work_outline,
-                    'Đang làm: ${rec.currentWorkload}',
-                    Colors.orange,
-                  ),
-                  const SizedBox(width: 8),
-                  _buildStatChip(
-                    Icons.history,
-                    'Đã làm: ${rec.matchingTasksCount}',
-                    Colors.green,
-                  ),
-                ],
-              ),
+                const SizedBox(height: 16),
 
-              if (rec.major.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  'Chuyên môn: ${rec.major}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[700],
+                // Score card
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        primary5.withOpacity(0.2),
+                        primary5.withOpacity(0.1),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildStatItem(
+                        Icons.stars,
+                        'Độ phù hợp',
+                        '$scorePercent%',
+                        primary2,
+                      ),
+                      Container(width: 1, height: 40, color: Colors.grey[300]),
+                      _buildStatItem(
+                        Icons.work_outline,
+                        'Đang làm',
+                        '${rec.currentWorkload}',
+                        primary3,
+                      ),
+                      Container(width: 1, height: 40, color: Colors.grey[300]),
+                      _buildStatItem(
+                        Icons.history,
+                        'Đã hoàn thành',
+                        '${rec.matchingTasksCount}',
+                        primary4,
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Expandable breakdown
+                const SizedBox(height: 12),
+                Theme(
+                  data: Theme.of(
+                    context,
+                  ).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    tilePadding: EdgeInsets.zero,
+                    title: Row(
+                      children: [
+                        Icon(
+                          Icons.analytics_outlined,
+                          size: 16,
+                          color: primary2,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Chi tiết điểm số',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                    children: [
+                      const SizedBox(height: 8),
+                      _buildScoreBar(
+                        'Độ tương đồng',
+                        rec.breakdown.similarityScore,
+                        primary2,
+                      ),
+                      _buildScoreBar(
+                        'Cùng dự án',
+                        rec.breakdown.hierarchyBonus,
+                        primary3,
+                      ),
+                      _buildScoreBar(
+                        'Khối lượng công việc',
+                        rec.breakdown.workloadPenalty,
+                        primary4,
+                      ),
+                    ],
                   ),
                 ),
               ],
-
-              // Expandable breakdown
-              const SizedBox(height: 12),
-              ExpansionTile(
-                tilePadding: EdgeInsets.zero,
-                title: const Text(
-                  'Chi tiết điểm số',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-                ),
-                children: [
-                  const SizedBox(height: 8),
-                  _buildScoreBar(
-                    'Độ tương đồng',
-                    rec.breakdown.similarityScore,
-                    Colors.blue,
-                  ),
-                  _buildScoreBar(
-                    'Cùng dự án',
-                    rec.breakdown.hierarchyBonus,
-                    Colors.green,
-                  ),
-                  _buildScoreBar(
-                    'Khối lượng công việc',
-                    rec.breakdown.workloadPenalty,
-                    Colors.orange,
-                  ),
-                ],
-              ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildStatChip(IconData icon, String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withAlpha(26),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: color,
-              fontWeight: FontWeight.w500,
-            ),
+  Widget _buildStatItem(
+    IconData icon,
+    String label,
+    String value,
+    Color color,
+  ) {
+    return Column(
+      children: [
+        Icon(icon, size: 24, color: color),
+        const SizedBox(height: 4),
+        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: color,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   Widget _buildScoreBar(String label, double score, Color color) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(label, style: const TextStyle(fontSize: 13)),
               Text(
-                '${(score * 100).toStringAsFixed(1)}%',
+                label,
                 style: const TextStyle(
                   fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                '${(score * 100).toStringAsFixed(1)}%',
+                style: TextStyle(
+                  fontSize: 13,
                   fontWeight: FontWeight.bold,
+                  color: color,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(8),
             child: LinearProgressIndicator(
               value: score,
-              backgroundColor: Colors.grey[300],
+              backgroundColor: Colors.grey[200],
               valueColor: AlwaysStoppedAnimation<Color>(color),
-              minHeight: 6,
+              minHeight: 8,
             ),
           ),
         ],
@@ -500,9 +709,9 @@ class _EmployeeRecommendationDialogState
   }
 
   Color _getRankColor(int rank) {
-    if (rank == 1) return Colors.amber;
-    if (rank == 2) return Colors.grey;
-    if (rank == 3) return Colors.brown;
-    return Colors.blue;
+    if (rank == 1) return const Color(0xFFFFD700); // Gold
+    if (rank == 2) return const Color(0xFFC0C0C0); // Silver
+    if (rank == 3) return const Color(0xFFCD7F32); // Bronze
+    return primary2;
   }
 }

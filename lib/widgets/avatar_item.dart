@@ -16,6 +16,7 @@ class AvatarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint("[THINK] ====> build avatar: ${avatar}");
     return Container(
       decoration: BoxDecoration(
         boxShadow: isShadow

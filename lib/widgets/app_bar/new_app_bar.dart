@@ -21,7 +21,7 @@ class NewAppBar extends StatelessWidget {
     var configsCubit = context.read<ConfigsCubit>();
     return Container(
       height: ScaleUtils.scaleSize(60, context),
-      color: ColorConfig.primary3,
+      color: ColorConfig.primary1,
       child: Row(
         children: [
           Expanded(
@@ -29,14 +29,14 @@ class NewAppBar extends StatelessWidget {
             child: Container(
               alignment: Alignment.center,
               padding: EdgeInsets.only(
-                left: ScaleUtils.scalePadding(30, context),
+                left: ScaleUtils.scalePadding(20, context),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Image.asset(
                     'assets/images/logo/logo_white.png',
-                    height: ScaleUtils.scaleSize(70, context),
+                    height: ScaleUtils.scaleSize(35, context),
                   ),
                 ],
               ),

@@ -54,13 +54,13 @@ class TaskMainPage extends StatelessWidget {
             return Container(
                 height: double.infinity,
                 width: double.infinity,
-                color: Colors.white,
+                color: ColorConfig.whiteBackground,
                 child: const LoadingWidget());
           }
           return Container(
             height: double.infinity,
             width: double.infinity,
-            color: Colors.white,
+            color: ColorConfig.whiteBackground,
             child: Padding(
               padding: EdgeInsets.all(ScaleUtils.scaleSize(0, context)),
               child: Column(

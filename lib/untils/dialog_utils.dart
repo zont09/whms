@@ -305,7 +305,7 @@ class DialogUtils {
     String title,
     String message, {
     Color mainColor = ColorConfig.primary2,
-    Color confirmColor = ColorConfig.error,
+    Color confirmColor = ColorConfig.primary2,
     Color cancelColor = ColorConfig.primary3,
   }) {
     return showDialog<bool>(

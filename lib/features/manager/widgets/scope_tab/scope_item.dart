@@ -92,10 +92,19 @@ class ScopeItem extends StatelessWidget {
                                                 cubit.scope.selectedManagers,
                                             users: reload.listMember!));
                                   },
-                                  child: Image.asset(
-                                      'assets/images/icons/ic_add_meeting.png',
-                                      height:
-                                          ScaleUtils.scaleSize(20, context)),
+                                  child: Container(
+                                    height: ScaleUtils.scaleSize(20, context),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        width: ScaleUtils.scaleSize(1.75, context),
+                                        color: ColorConfig.primary2,
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Icon(Icons.add, weight: 800, size: ScaleUtils.scaleSize(14, context), color: ColorConfig.primary2,),
+                                    ),
+                                  ),
                                 )
                               ],
                             ),
@@ -139,7 +148,7 @@ class ScopeItem extends StatelessWidget {
                                 height: ScaleUtils.scalePadding(10, context)),
                             Row(
                               children: [
-                                Text(AppText.titleAssignee.text,
+                                Text(AppText.titleMember.text,
                                     style: TextStyle(
                                         fontSize:
                                             ScaleUtils.scaleSize(20, context),
@@ -161,10 +170,19 @@ class ScopeItem extends StatelessWidget {
                                                 cubit.scope.selectedMembers,
                                             users: reload.listMember!));
                                   },
-                                  child: Image.asset(
-                                      'assets/images/icons/ic_add_meeting.png',
-                                      height:
-                                          ScaleUtils.scaleSize(20, context)),
+                                  child: Container(
+                                    height: ScaleUtils.scaleSize(20, context),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        width: ScaleUtils.scaleSize(1.75, context),
+                                        color: ColorConfig.primary2,
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: Icon(Icons.add, weight: 800, size: ScaleUtils.scaleSize(14, context), color: ColorConfig.primary2,),
+                                    ),
+                                  ),
                                 )
                               ],
                             ),

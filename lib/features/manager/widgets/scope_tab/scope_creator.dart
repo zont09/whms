@@ -18,24 +18,24 @@ class ScopeCreator extends StatelessWidget {
     var reload = BlocProvider.of<ListScopeCubit>(context);
     return Row(
       children: [
-        Text(AppText.txtCreatorScope.text,
-            style: TextStyle(
-              color: ColorConfig.textColor,
-              fontWeight: FontWeight.w600,
-              fontSize: ScaleUtils.scaleSize(16, context),
-            )),
-        SizedBox(width: ScaleUtils.scalePadding(10, context)),
-        CircleAvatar(
-          radius: ScaleUtils.scaleSize(16, context),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10000),
-            child: Image.network(
-              avatar,
-              errorBuilder: (_, __, ___) =>
-                  Container(color: ColorConfig.border),
-            ),
-          ),
-        ),
+        // Text(AppText.txtCreatorScope.text,
+        //     style: TextStyle(
+        //       color: ColorConfig.textColor,
+        //       fontWeight: FontWeight.w600,
+        //       fontSize: ScaleUtils.scaleSize(16, context),
+        //     )),
+        // SizedBox(width: ScaleUtils.scalePadding(10, context)),
+        // CircleAvatar(
+        //   radius: ScaleUtils.scaleSize(16, context),
+        //   child: ClipRRect(
+        //     borderRadius: BorderRadius.circular(10000),
+        //     child: Image.network(
+        //       avatar,
+        //       errorBuilder: (_, __, ___) =>
+        //           Container(color: ColorConfig.border),
+        //     ),
+        //   ),
+        // ),
         const Spacer(),
         InkWell(
           onTap: () async {

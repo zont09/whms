@@ -30,7 +30,6 @@ class AccountInformationView extends StatelessWidget {
     final List<String> listRole = [
       AppText.textTasker.text,
       AppText.textHandler.text,
-      AppText.textSubManager.text,
       AppText.textManager.text,
       // if (roleSystem != 0 && roleSystem <= 20) AppText.textTasker.text,
       // if (roleSystem != 0 && roleSystem <= 20) AppText.textHandler.text,

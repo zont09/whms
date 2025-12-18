@@ -104,7 +104,7 @@ class _MainTabState extends State<MainTab> {
                               Expanded(
                                 flex: 1,
                                 child: Material(
-                                  color: ColorConfig.primary3,
+                                  color: ColorConfig.primary1,
                                   child: MainSidebar(
                                     curTab: widget.tab,
                                     cubit: cubit,

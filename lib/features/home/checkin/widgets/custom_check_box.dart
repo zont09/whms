@@ -7,9 +7,9 @@ class CustomCheckBox extends StatelessWidget {
       {super.key,
       required this.isActive,
       required this.onTap,
-      this.colorBorder = ColorConfig.border5,
+      this.colorBorder = ColorConfig.primary2,
       this.colorCheck = Colors.white,
-      this.colorActive = ColorConfig.border5,
+      this.colorActive = ColorConfig.primary2,
       this.colorInactive = Colors.white,
       this.size = 11});
 

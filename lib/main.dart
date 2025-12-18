@@ -78,6 +78,7 @@ class MyApp extends StatelessWidget {
             return CalendarControllerProvider(
               controller: EventController(),
               child: MaterialApp.router(
+                debugShowCheckedModeBanner: false,
                 localizationsDelegates: const [
                   ...GlobalMaterialLocalizations.delegates, // Có sẵn
                   FlutterQuillLocalizations.delegate,

@@ -22,16 +22,28 @@ class ModeLine extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (isShowIcon)
-            Image.asset(
-              'assets/images/icons/ic_close.png',
+            Container(
               height: ScaleUtils.scaleSize(28, context),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  width: ScaleUtils.scaleSize(2.5, context),
+                  color: ColorConfig.primary2,
+                ),
+              ),
+              child: Center(
+                child: Icon(Icons.close, weight: 800, size: ScaleUtils.scaleSize(16, context), color: ColorConfig.primary2,),
+              ),
             ),
           SizedBox(width: ScaleUtils.scaleSize(9, context)),
-          Text(title,
-              style: TextStyle(
-                  fontSize: ScaleUtils.scaleSize(24, context),
-                  fontWeight: FontWeight.w600,
-                  color: ColorConfig.primary2))
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: ScaleUtils.scaleSize(24, context),
+              fontWeight: FontWeight.w600,
+              color: ColorConfig.primary2,
+            ),
+          ),
         ],
       ),
     );

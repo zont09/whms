@@ -20,11 +20,11 @@ class ManagementAssignmentView extends StatelessWidget {
   Widget build(BuildContext context) {
     var configs = BlocProvider.of<ConfigsCubit>(context);
     return Container(
-        color: Colors.white,
+        color: ColorConfig.whiteBackground,
         padding: EdgeInsets.all(ScaleUtils.scaleSize(20, context)),
         child: Container(
             decoration: BoxDecoration(
-                color: Colors.white,
+                color: ColorConfig.whiteBackground,
                 borderRadius:
                     BorderRadius.circular(ScaleUtils.scaleSize(20, context)),
                 boxShadow: [

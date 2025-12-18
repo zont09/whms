@@ -28,6 +28,8 @@ class ColorConfig {
   static const Color addressTask = Color(0xFF950606);
   static const Color disable = Color(0xFFACACAC);
 
+  static const Color whiteBackground = Color(0xFFF7F7F7);
+
   static LinearGradient backgroundLogin() {
     return const LinearGradient(
       begin: Alignment.topCenter,

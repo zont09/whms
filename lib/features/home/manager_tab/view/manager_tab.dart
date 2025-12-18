@@ -21,7 +21,7 @@ class ManagerTab extends StatelessWidget {
       Container(
         height: double.infinity,
         width: double.infinity,
-        color: ColorConfig.primary3,
+        color: ColorConfig.primary1,
       ),
       BlocProvider(
           create: (context) =>

@@ -26,7 +26,7 @@ class HRTab extends StatelessWidget {
           Container(
             height: double.infinity,
             width: double.infinity,
-            color: ColorConfig.primary3,
+            color: ColorConfig.primary1,
           ),
           BlocProvider(
             create: (context) => HrTabCubit(ConfigsCubit.fromContext(context))
@@ -86,7 +86,7 @@ class HRTab extends StatelessWidget {
                               child: Container(
                                 height: double.infinity,
                                 width: double.infinity,
-                                color: Colors.white,
+                                color: ColorConfig.whiteBackground,
                                 child: s == 0
                                     ? const LoadingWidget()
                                     : HrMainView(tab: tab, cubit: cubit),

@@ -1,3 +1,4 @@
+import 'package:whms/configs/color_config.dart';
 import 'package:whms/defines/status_check_in_define.dart';
 import 'package:whms/features/home/checkin/views/no_task_view.dart';
 import 'package:whms/features/home/main_tab/blocs/task_main_view_cubit.dart';
@@ -171,7 +172,7 @@ class _TaskMainViewState extends State<TaskMainView> {
             }
 
             return Container(
-                color: Colors.white,
+                color: ColorConfig.whiteBackground,
                 height: double.infinity,
                 width: double.infinity,
                 padding: EdgeInsets.only(

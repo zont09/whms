@@ -57,7 +57,7 @@ class CheckOutMainView extends StatelessWidget {
                           cubit.changeTab(2);
                         },
                         child: Image.asset(
-                          'assets/images/icons/ic_add_task.png',
+                          'assets/images/icons/ic_add_meeting.png',
                           height: ScaleUtils.scaleSize(24, context),
                         ),
                       ),
