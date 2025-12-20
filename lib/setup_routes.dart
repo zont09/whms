@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:whms/configs/config_cubit.dart';
 import 'package:whms/features/home/hr/views/hr_tab.dart';
 import 'package:whms/features/home/main_tab/screens/main_tab.dart';
+import 'package:whms/features/home/main_tab/views/meeting/meeting_online_screen.dart';
 import 'package:whms/features/home/manager_tab/view/manager_tab.dart';
 import 'package:whms/features/home/overview/screens/overview_tab.dart';
 import 'package:whms/features/login/screens/change_password_screen.dart';
@@ -230,18 +231,13 @@ class SetupGoRouter {
         },
       ),
       GoRoute(
-        path: "/test/:tab",
+        path: "/meeting/:tab",
         pageBuilder: (context, state) {
-          final tab = state.pathParameters['tab'] ?? 'name=default&room=123';
-          final query = 'name=Think&room=123';
-          final params = Uri.splitQueryString(query);
-          final name = params['name'] ?? 'default';
-          final room = params['room'] ?? '123';
-          debugPrint("[THINK] ====> test $name - $room");
-          // final cfC = ConfigsCubit.fromContext(context);
+          final tab = state.pathParameters['tab'] ?? '';
+          final cfC = ConfigsCubit.fromContext(context);
           // cfC.saveSaveTab(cfC.keySaveTabOverview, "${AppRoutes.overview}/$tab");
           return CustomTransitionPage(
-            child: VideoCallPage(),
+            child: MeetingJoinPage(roomId: tab, userId: cfC.user.id),
             transitionsBuilder: fadeTransitionBuilder,
           );
         },
