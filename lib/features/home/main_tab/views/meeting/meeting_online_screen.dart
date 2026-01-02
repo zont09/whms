@@ -101,18 +101,18 @@ class _MeetingJoinPageState extends State<MeetingJoinPage> {
 
       // Validate 4: Kiểm tra cuộc họp đã kết thúc chưa (optional)
       // Giả sử cuộc họp kéo dài 2 giờ, có thể điều chỉnh
-      final meetingEndTime = meetingTime.add(Duration(hours: 2));
-      if (now.isAfter(meetingEndTime)) {
-        setState(() {
-          _isLoading = false;
-          _isValid = false;
-          _errorMessage = 'Cuộc họp đã kết thúc';
-        });
-        debugPrint(
-          '[MEETING_ERROR] Meeting ended: now=$now, endTime=$meetingEndTime',
-        );
-        return;
-      }
+      // final meetingEndTime = meetingTime.add(Duration(hours: 2));
+      // if (now.isAfter(meetingEndTime)) {
+      //   setState(() {
+      //     _isLoading = false;
+      //     _isValid = false;
+      //     _errorMessage = 'Cuộc họp đã kết thúc';
+      //   });
+      //   debugPrint(
+      //     '[MEETING_ERROR] Meeting ended: now=$now, endTime=$meetingEndTime',
+      //   );
+      //   return;
+      // }
 
       // Tất cả validation đều pass
       setState(() {
