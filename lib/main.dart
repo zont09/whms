@@ -77,28 +77,32 @@ class MyApp extends StatelessWidget {
             // giaiCuuScopeSubtask();
             return CalendarControllerProvider(
               controller: EventController(),
-              child: MaterialApp.router(
-                debugShowCheckedModeBanner: false,
-                localizationsDelegates: const [
-                  ...GlobalMaterialLocalizations.delegates, // Có sẵn
-                  FlutterQuillLocalizations.delegate,
-                ],
-                supportedLocales: const [
-                  Locale('vi', 'VN'),
-                ],
-                scrollBehavior: const MaterialScrollBehavior().copyWith(
-                    dragDevices: {
-                      PointerDeviceKind.touch,
-                      PointerDeviceKind.trackpad,
-                      PointerDeviceKind.mouse
-                    }),
-                title: 'WHMS',
-                theme: ThemeData(
-                  colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
-                  useMaterial3: true,
-                  fontFamily: 'Afacad',
+              child: MediaQuery(
+                data: MediaQuery.of(context)
+                    .copyWith(textScaler: TextScaler.linear(1.15)),
+                child: MaterialApp.router(
+                  debugShowCheckedModeBanner: false,
+                  localizationsDelegates: const [
+                    ...GlobalMaterialLocalizations.delegates, // Có sẵn
+                    FlutterQuillLocalizations.delegate,
+                  ],
+                  supportedLocales: const [
+                    Locale('vi', 'VN'),
+                  ],
+                  scrollBehavior: const MaterialScrollBehavior().copyWith(
+                      dragDevices: {
+                        PointerDeviceKind.touch,
+                        PointerDeviceKind.trackpad,
+                        PointerDeviceKind.mouse
+                      }),
+                  title: 'WHMS',
+                  theme: ThemeData(
+                    colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
+                    useMaterial3: true,
+                    fontFamily: 'Afacad',
+                  ),
+                  routerConfig: _router,
                 ),
-                routerConfig: _router,
               ),
             );
           },

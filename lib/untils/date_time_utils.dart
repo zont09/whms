@@ -261,4 +261,23 @@ class DateTimeUtils {
       ),
     );
   }
+
+  static bool isSameDay(DateTime a, DateTime b) {
+    return a.day == b.day && a.month == b.month && a.year == b.year;
+  }
+
+  static String getDayOfWeek(DateTime date) {
+    const days = [
+      'Thứ Hai',
+      'Thứ Ba',
+      'Thứ Tư',
+      'Thứ Năm',
+      'Thứ Sáu',
+      'Thứ Bảy',
+      'Chủ Nhật',
+    ];
+
+    // DateTime.weekday: 1 = Monday, 7 = Sunday
+    return days[date.weekday - 1];
+  }
 }

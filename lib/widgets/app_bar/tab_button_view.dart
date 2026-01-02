@@ -43,8 +43,6 @@ class TabButtonView extends StatelessWidget {
                     url = cfC.getSaveTab(cfC.keySaveTabManagement);
                   } if(e == HomeTabBarDefine.humanResource) {
                     url = cfC.getSaveTab(cfC.keySaveTabHr);
-                  }  if(e == HomeTabBarDefine.issues) {
-                    url = cfC.getSaveTab(cfC.keySaveTabIssue);
                   }
                   if(url != null) {
                     context.go(url);

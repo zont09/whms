@@ -49,7 +49,7 @@ class ColorConfig {
   static const Color redTitle = Color(0xFFBF0000);
   static const Color yellowCreatorScope = Color(0xFFFFF1BC);
 
-  static const Color primary1 = Color(0xFF0448db);
+  static const Color primary1 = Color(0xFF0E2A6D);
   static const Color primary2 = Color(0xFF006df5);
   static const Color primary3 = Color(0xFF0086f3);
   static const Color primary4 = Color(0xFF0099d8);

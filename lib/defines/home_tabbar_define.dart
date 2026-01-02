@@ -7,7 +7,6 @@ enum HomeTabBarDefine {
   overview,
   management,
   humanResource,
-  issues
 }
 
 extension HomeTabbarDefineExtension on HomeTabBarDefine {
@@ -21,8 +20,6 @@ extension HomeTabbarDefineExtension on HomeTabBarDefine {
         return AppText.titleManager.text;
       case HomeTabBarDefine.humanResource:
         return AppText.titleHR.text;
-      case HomeTabBarDefine.issues:
-        return AppText.titleIssues.text;
     }
   }
 
@@ -36,10 +33,6 @@ extension HomeTabbarDefineExtension on HomeTabBarDefine {
         return 'assets/images/icons/ic_manager.png';
       case HomeTabBarDefine.humanResource:
         return 'assets/images/icons/ic_hr.png';
-      case HomeTabBarDefine.issues:
-        return 'assets/images/icons/ic_issues.png';
-      default:
-        return 'assets/images/icons/ic_okr.png';
     }
   }
 
@@ -53,8 +46,6 @@ extension HomeTabbarDefineExtension on HomeTabBarDefine {
         return '${AppRoutes.manager}/${ConfigsCubit.localScopeId.isEmpty ? '0' : ConfigsCubit.localScopeId}&001000000';
       case HomeTabBarDefine.humanResource:
         return AppRoutes.hr;
-      case HomeTabBarDefine.issues:
-        return AppRoutes.issues;
     }
   }
 }

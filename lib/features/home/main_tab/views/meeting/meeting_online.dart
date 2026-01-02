@@ -1,5 +1,8 @@
-// signaling.dart - FINAL FIX: Phân biệt camera và screen streams
-// signaling.dart - FINAL FIX với MediaStreamTrack
+// Complete video call implementation with all fixes
+// Fix 1: Remove /total in participant counter
+// Fix 2: Add "Screen: " prefix for screen shares
+// Fix 3: Force remove screen share UI immediately when stopped
+
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
@@ -18,10 +21,8 @@ class Signaling {
 
   Map<String, String> streamToPeer = {};
   Map<String, List<String>> peerToStreams = {};
-
-  // ✅ Track loại stream và số lượng video tracks của mỗi peer
-  Map<String, bool> streamIsScreen = {}; // streamId -> isScreenShare
-  Map<String, int> peerVideoStreamCount = {}; // peerId -> số lượng video streams
+  Map<String, bool> streamIsScreen = {};
+  Map<String, int> peerVideoStreamCount = {};
 
   Map<String, String> clientToUser = {};
   Map<String, String> userToClient = {};
@@ -52,38 +53,26 @@ class Signaling {
         final Map msg = jsonDecode(message);
         _handleMessage(msg);
       },
-      onError: (error) {
-        debugPrint('[WS_ERROR] $error');
-      },
-      onDone: () {
-        debugPrint('[WS_CLOSED] Connection closed');
-      },
+      onError: (error) => debugPrint('[WS_ERROR] $error'),
+      onDone: () => debugPrint('[WS_CLOSED] Connection closed'),
     );
   }
 
   Future<RTCPeerConnection> _createPeer(String peerId, bool polite) async {
-    final Map<String, dynamic> config = {
-      'iceServers': [
-        {'urls': 'stun:stun.l.google.com:19302'},
-      ],
+    final config = {
+      'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}],
       'sdpSemantics': 'unified-plan',
     };
     final pc = await createPeerConnection(config);
 
     localStream?.getTracks().forEach((t) => pc.addTrack(t, localStream!));
-
     if (screenStream != null) {
       screenStream!.getTracks().forEach((t) => pc.addTrack(t, screenStream!));
     }
 
     pc.onIceCandidate = (candidate) {
       if (candidate != null) {
-        _send({
-          'type': 'ice',
-          'to': peerId,
-          'from': clientId,
-          'candidate': candidate.toMap(),
-        });
+        _send({'type': 'ice', 'to': peerId, 'from': clientId, 'candidate': candidate.toMap()});
       }
     };
 
@@ -92,17 +81,10 @@ class Signaling {
       final stream = event.streams.first;
       final streamId = stream.id;
 
-      debugPrint('[TRACK] Received ${track.kind} track from peer $peerId');
-      debugPrint('[TRACK] streamId=$streamId, label="${track.label}", enabled=${track.enabled}');
-
-      // ✅ Detect screen share
       final isScreen = _isScreenShareStream(peerId, stream, track);
-
-      debugPrint('[TRACK] isScreen=$isScreen (detected via heuristics)');
 
       if (!remoteStreams.containsKey(streamId)) {
         remoteStreams[streamId] = stream;
-
         streamToPeer[streamId] = peerId;
         streamIsScreen[streamId] = isScreen;
         peerToStreams[peerId] = peerToStreams[peerId] ?? [];
@@ -110,10 +92,8 @@ class Signaling {
           peerToStreams[peerId]!.add(streamId);
         }
 
-        // Update video stream count
         if (track.kind == 'video') {
           peerVideoStreamCount[peerId] = (peerVideoStreamCount[peerId] ?? 0) + 1;
-          debugPrint('[TRACK] Peer $peerId now has ${peerVideoStreamCount[peerId]} video streams');
         }
 
         final peerUserId = clientToUser[peerId];
@@ -125,45 +105,28 @@ class Signaling {
     final offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
     final localDesc = await pc.getLocalDescription();
-    _send({
-      'type': 'offer',
-      'to': peerId,
-      'from': clientId,
-      'sdp': localDesc?.toMap(),
-    });
+    _send({'type': 'offer', 'to': peerId, 'from': clientId, 'sdp': localDesc?.toMap()});
 
     pcs[peerId] = pc;
     return pc;
   }
 
-  // ✅ Improved screen share detection
   bool _isScreenShareStream(String peerId, MediaStream stream, MediaStreamTrack track) {
-    // Method 1: Check if peer already has a video stream
-    // Second video stream is likely screen share
     final currentVideoCount = peerVideoStreamCount[peerId] ?? 0;
     if (currentVideoCount > 0 && track.kind == 'video') {
-      debugPrint('[DETECT] Peer $peerId already has $currentVideoCount video stream(s) → this is likely screen share');
       return true;
     }
 
-    // Method 2: Check track label (screen capture usually has "screen" in label)
     final label = track.label?.toLowerCase() ?? '';
     if (label.contains('screen') || label.contains('display') || label.contains('monitor')) {
-      debugPrint('[DETECT] Track label contains screen keywords: "$label"');
       return true;
     }
 
-    // Method 3: Screen share streams typically have only video, no audio
     final hasAudio = stream.getAudioTracks().isNotEmpty;
     final hasVideo = stream.getVideoTracks().isNotEmpty;
-    final videoCount = stream.getVideoTracks().length;
 
-    if (hasVideo && !hasAudio && videoCount == 1 && track.kind == 'video') {
-      debugPrint('[DETECT] Stream has video but no audio → might be screen share');
-      // This is a weaker signal, so only use if we have multiple video streams
-      if (currentVideoCount > 0) {
-        return true;
-      }
+    if (hasVideo && !hasAudio && currentVideoCount > 0 && track.kind == 'video') {
+      return true;
     }
 
     return false;
@@ -174,22 +137,17 @@ class Signaling {
     final from = msg['from'];
     final fromUserId = msg['user_id'];
 
-    debugPrint('[MESSAGE] type=$type from=$from userId=$fromUserId');
-
     if (type == 'client_id') {
       clientId = msg['client_id'];
-      debugPrint('[CLIENT_ID] Assigned clientId: $clientId for userId: $userId');
+      debugPrint('[CLIENT_ID] $clientId for userId: $userId');
       return;
     }
 
     if (type == 'peers_list') {
       final peers = msg['peers'] as List;
       for (var peer in peers) {
-        final peerClientId = peer['client_id'];
-        final peerUserId = peer['user_id'];
-        clientToUser[peerClientId] = peerUserId;
-        userToClient[peerUserId] = peerClientId;
-        debugPrint('[PEER_LIST] clientId=$peerClientId -> userId=$peerUserId');
+        clientToUser[peer['client_id']] = peer['user_id'];
+        userToClient[peer['user_id']] = peer['client_id'];
       }
       return;
     }
@@ -201,23 +159,17 @@ class Signaling {
 
     if (type == 'join') {
       if (from != clientId && !pcs.containsKey(from)) {
-        debugPrint('[JOIN] New peer: clientId=$from userId=$fromUserId');
         await _createPeer(from, false);
       }
     } else if (type == 'offer' && msg['to'] == clientId) {
       final sdp = RTCSessionDescription(msg['sdp']['sdp'], msg['sdp']['type']);
       var pc = pcs[from] ?? await _createPeerConnectionOnly(from);
 
-      final polite = true;
       final state = await pc.getSignalingState();
       final isStable = state == RTCSignalingState.RTCSignalingStateStable;
 
-      if (!isStable && !polite) return;
-
-      if (!isStable && polite) {
-        try {
-          await pc.close();
-        } catch (_) {}
+      if (!isStable) {
+        try { await pc.close(); } catch (_) {}
         pcs.remove(from);
         pc = await _createPeerConnectionOnly(from);
       }
@@ -228,21 +180,11 @@ class Signaling {
       final answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       final localDesc = await pc.getLocalDescription();
-      _send({
-        'type': 'answer',
-        'to': from,
-        'from': clientId,
-        'sdp': localDesc?.toMap(),
-      });
+      _send({'type': 'answer', 'to': from, 'from': clientId, 'sdp': localDesc?.toMap()});
     } else if (type == 'answer' && msg['to'] == clientId) {
       final pc = pcs[from];
-      if (pc != null &&
-          (await pc.getSignalingState()) !=
-              RTCSignalingState.RTCSignalingStateStable) {
-        final sdp = RTCSessionDescription(
-          msg['sdp']['sdp'],
-          msg['sdp']['type'],
-        );
+      if (pc != null && (await pc.getSignalingState()) != RTCSignalingState.RTCSignalingStateStable) {
+        final sdp = RTCSessionDescription(msg['sdp']['sdp'], msg['sdp']['type']);
         await pc.setRemoteDescription(sdp);
         if ((await pc.getRemoteDescription()) == null) {
           await pc.setRemoteDescription(sdp);
@@ -257,145 +199,104 @@ class Signaling {
         msg['candidate']['sdpMLineIndex'],
       );
 
-      if (pc == null) {
-        pendingCandidates[from] = pendingCandidates[from] ?? [];
-        pendingCandidates[from]!.add(c);
-        return;
-      }
-
-      final desc = await pc.getRemoteDescription();
-      if (desc == null || desc.sdp == null) {
+      if (pc == null || (await pc.getRemoteDescription())?.sdp == null) {
         pendingCandidates[from] = pendingCandidates[from] ?? [];
         pendingCandidates[from]!.add(c);
       } else {
-        try {
-          await pc.addCandidate(c);
-        } catch (e) {}
+        try { await pc.addCandidate(c); } catch (e) {}
       }
     } else if (type == 'leave') {
-      debugPrint('[LEAVE] Peer leaving: clientId=$from userId=$fromUserId');
       await _cleanupPeer(from);
-
-      if (fromUserId != null) {
-        userToClient.remove(fromUserId);
-      }
+      if (fromUserId != null) userToClient.remove(fromUserId);
       clientToUser.remove(from);
     } else if (type == 'stop_screen_share') {
-      // ✅ CHỈ xóa screen streams
-      debugPrint('[SCREEN_SHARE_STOPPED] Peer $from ($fromUserId) stopped screen sharing');
+      // ✅ FIX 3: Force remove screen share UI
+      debugPrint('[SCREEN_STOPPED] Peer $from stopped sharing');
 
       final streamsToRemove = <String>[];
+      final screenStreamId = msg['screen_stream_id'];
 
-      debugPrint('[SCREEN_CHECK] Checking streams for peer $from:');
       peerToStreams[from]?.forEach((streamId) {
         final isScreen = streamIsScreen[streamId] ?? false;
-        debugPrint('  - StreamId=$streamId, isScreen=$isScreen');
-        if (isScreen) {
+        if (isScreen || (screenStreamId != null && streamId == screenStreamId)) {
           streamsToRemove.add(streamId);
         }
       });
 
-      debugPrint('[SCREEN_CHECK] Will remove ${streamsToRemove.length} screen stream(s), keep ${(peerToStreams[from]?.length ?? 0) - streamsToRemove.length} camera stream(s)');
+      // Fallback: remove 2nd video stream if no screen flag
+      if (streamsToRemove.isEmpty && peerToStreams[from] != null) {
+        final videoStreams = peerToStreams[from]!.where((id) {
+          final s = remoteStreams[id];
+          return s != null && s.getVideoTracks().isNotEmpty;
+        }).toList();
 
-      for (var streamId in streamsToRemove) {
-        if (remoteStreams.containsKey(streamId)) {
-          final stream = remoteStreams[streamId];
-
-          if (stream != null) {
-            // Count video tracks being removed
-            final videoTracks = stream.getVideoTracks();
-            if (videoTracks.isNotEmpty) {
-              peerVideoStreamCount[from] = max(0, (peerVideoStreamCount[from] ?? 1) - 1);
-              debugPrint('[SCREEN_CHECK] Updated peer $from video count to ${peerVideoStreamCount[from]}');
-            }
-
-            for (var track in stream.getTracks()) {
-              try {
-                track.stop();
-              } catch (e) {}
-            }
+        if (videoStreams.length > 1) {
+          for (int i = 1; i < videoStreams.length; i++) {
+            streamsToRemove.add(videoStreams[i]);
           }
-
-          onRemoveRemoteStream?.call(streamId);
-          remoteStreams.remove(streamId);
-          streamToPeer.remove(streamId);
-          streamIsScreen.remove(streamId);
-          peerToStreams[from]?.remove(streamId);
-
-          debugPrint('[SCREEN_REMOVED] ✅ Removed screen stream: $streamId');
         }
       }
 
-      if (streamsToRemove.isEmpty) {
-        debugPrint('[WARNING] No screen streams found for peer $from - might be detection issue');
-      }
-    }
-  }
-
-  Future<void> _cleanupPeer(String peerId) async {
-    debugPrint('[CLEANUP] Starting cleanup for peer: $peerId');
-
-    final pc = pcs[peerId];
-    if (pc != null) {
-      try {
-        await pc.close();
-      } catch (e) {
-        debugPrint('[ERROR] Error closing peer connection: $e');
-      }
-      pcs.remove(peerId);
-    }
-
-    final streamIds = peerToStreams[peerId] ?? [];
-    debugPrint('[CLEANUP] Found ${streamIds.length} streams for peer $peerId');
-
-    for (var streamId in List<String>.from(streamIds)) {
-      final stream = remoteStreams[streamId];
-      if (stream != null) {
-        for (var track in stream.getTracks()) {
-          try {
-            track.stop();
-          } catch (e) {}
+      for (var streamId in streamsToRemove) {
+        final stream = remoteStreams[streamId];
+        if (stream != null) {
+          for (var track in stream.getTracks()) {
+            try { track.stop(); } catch (e) {}
+          }
+          if (stream.getVideoTracks().isNotEmpty) {
+            peerVideoStreamCount[from] = max(0, (peerVideoStreamCount[from] ?? 1) - 1);
+          }
         }
 
         remoteStreams.remove(streamId);
         streamToPeer.remove(streamId);
         streamIsScreen.remove(streamId);
-        onRemoveRemoteStream?.call(streamId);
+        peerToStreams[from]?.remove(streamId);
 
-        debugPrint('[CLEANUP] ✅ Removed stream: $streamId');
+        onRemoveRemoteStream?.call(streamId);
+        debugPrint('[SCREEN_REMOVED] ✅ $streamId');
+      }
+    }
+  }
+
+  Future<void> _cleanupPeer(String peerId) async {
+    final pc = pcs[peerId];
+    if (pc != null) {
+      try { await pc.close(); } catch (e) {}
+      pcs.remove(peerId);
+    }
+
+    final streamIds = peerToStreams[peerId] ?? [];
+    for (var streamId in List<String>.from(streamIds)) {
+      final stream = remoteStreams[streamId];
+      if (stream != null) {
+        for (var track in stream.getTracks()) {
+          try { track.stop(); } catch (e) {}
+        }
+        remoteStreams.remove(streamId);
+        streamToPeer.remove(streamId);
+        streamIsScreen.remove(streamId);
+        onRemoveRemoteStream?.call(streamId);
       }
     }
 
     peerToStreams.remove(peerId);
-    peerVideoStreamCount.remove(peerId); // ✅ Clean video count
+    peerVideoStreamCount.remove(peerId);
     pendingCandidates.remove(peerId);
-
-    debugPrint('[CLEANUP] ✅ Completed cleanup for peer: $peerId');
   }
 
   Future<RTCPeerConnection> _createPeerConnectionOnly(String peerId) async {
-    final Map<String, dynamic> config = {
-      'iceServers': [
-        {'urls': 'stun:stun.l.google.com:19302'},
-      ],
-      'sdpSemantics': 'unified-plan',
-    };
+    final config = {'iceServers': [{'urls': 'stun:stun.l.google.com:19302'}], 'sdpSemantics': 'unified-plan'};
     final pc = await createPeerConnection(config);
 
     localStream?.getTracks().forEach((t) => pc.addTrack(t, localStream!));
-
     if (screenStream != null) {
       screenStream!.getTracks().forEach((t) => pc.addTrack(t, screenStream!));
     }
 
     pc.onIceCandidate = (candidate) {
       if (candidate != null) {
-        _send({
-          'type': 'ice',
-          'to': peerId,
-          'from': clientId,
-          'candidate': candidate.toMap(),
-        });
+        _send({'type': 'ice', 'to': peerId, 'from': clientId, 'candidate': candidate.toMap()});
       }
     };
 
@@ -404,13 +305,9 @@ class Signaling {
         final stream = event.streams[0];
         final streamId = stream.id;
         final track = event.track;
-
-        debugPrint('[TRACK] Received ${track.kind} track from peer $peerId');
-
         final isScreen = _isScreenShareStream(peerId, stream, track);
 
         remoteStreams[streamId] = stream;
-
         streamToPeer[streamId] = peerId;
         streamIsScreen[streamId] = isScreen;
         peerToStreams[peerId] = peerToStreams[peerId] ?? [];
@@ -418,19 +315,16 @@ class Signaling {
           peerToStreams[peerId]!.add(streamId);
         }
 
-        // Update video stream count
         if (track.kind == 'video') {
           peerVideoStreamCount[peerId] = (peerVideoStreamCount[peerId] ?? 0) + 1;
         }
 
         final peerUserId = clientToUser[peerId];
         onAddRemoteStream?.call(streamId, stream, peerUserId, isScreen);
-        debugPrint("[TRACK_ADDED] streamId=$streamId userId=$peerUserId isScreen=$isScreen");
       }
     };
 
     pc.onConnectionState = (state) {
-      debugPrint('[CONNECTION_STATE] Peer $peerId state: $state');
       if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
           state == RTCPeerConnectionState.RTCPeerConnectionStateClosed) {
         _cleanupPeer(peerId);
@@ -459,35 +353,22 @@ class Signaling {
 
   Future<void> startScreenShare() async {
     try {
-      screenStream = await navigator.mediaDevices.getDisplayMedia({
-        'video': true,
-        'audio': false,
-      });
-
+      screenStream = await navigator.mediaDevices.getDisplayMedia({'video': true, 'audio': false});
       final screenTrack = screenStream!.getVideoTracks().first;
-      debugPrint('[SCREEN_SHARE] Started, streamId=${screenStream!.id}');
 
       for (final entry in pcs.entries) {
         final pc = entry.value;
         await pc.addTrack(screenTrack, screenStream!);
-
         final offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         final localDesc = await pc.getLocalDescription();
-        _send({
-          'type': 'offer',
-          'to': entry.key,
-          'from': clientId,
-          'sdp': localDesc?.toMap(),
-        });
+        _send({'type': 'offer', 'to': entry.key, 'from': clientId, 'sdp': localDesc?.toMap()});
       }
 
       screenTrack.onEnded = () async {
-        debugPrint('[SCREEN_SHARE] User stopped via browser');
         await stopScreenShare();
       };
     } catch (e) {
-      debugPrint('[SCREEN_SHARE_ERROR] $e');
       screenStream = null;
       rethrow;
     }
@@ -496,105 +377,73 @@ class Signaling {
   Future<void> stopScreenShare() async {
     if (screenStream == null) return;
 
-    debugPrint('[SCREEN_SHARE] Stopping screen share');
+    final screenStreamId = screenStream!.id;
 
-    // Stop all screen tracks
     for (var track in screenStream!.getTracks()) {
       track.stop();
     }
 
-    // Remove screen tracks from all peer connections
-    for (final pc in pcs.values) {
+    for (final entry in pcs.entries) {
+      final peerId = entry.key;
+      final pc = entry.value;
       final senders = await pc.getSenders();
+      bool removed = false;
+
       for (final sender in senders) {
-        if (sender.track != null &&
-            screenStream!.getTracks().any((t) => t.id == sender.track!.id)) {
+        if (sender.track != null && screenStream!.getTracks().any((t) => t.id == sender.track!.id)) {
           await pc.removeTrack(sender);
-          debugPrint('[SCREEN_SHARE] Removed screen track from peer');
+          removed = true;
         }
       }
 
-      // Renegotiate
-      final offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-      final localDesc = await pc.getLocalDescription();
-
-      for (final entry in pcs.entries) {
-        if (entry.value == pc) {
-          _send({
-            'type': 'offer',
-            'to': entry.key,
-            'from': clientId,
-            'sdp': localDesc?.toMap(),
-          });
-        }
+      if (removed) {
+        try {
+          final offer = await pc.createOffer();
+          await pc.setLocalDescription(offer);
+          final localDesc = await pc.getLocalDescription();
+          if (localDesc != null) {
+            _send({'type': 'offer', 'to': peerId, 'from': clientId, 'sdp': localDesc.toMap()});
+          }
+        } catch (e) {}
       }
     }
 
-    // Notify others
-    _send({
-      'type': 'stop_screen_share',
-      'from': clientId,
-    });
-
+    _send({'type': 'stop_screen_share', 'from': clientId, 'screen_stream_id': screenStreamId});
     screenStream = null;
     onScreenShareEnded?.call();
-
-    debugPrint('[SCREEN_SHARE] ✅ Screen share stopped');
   }
 
   Future<void> _flushPendingCandidates(String peerId, RTCPeerConnection pc) async {
     final list = pendingCandidates[peerId];
     if (list == null || list.isEmpty) return;
-
     for (var c in List<RTCIceCandidate>.from(list)) {
-      try {
-        await pc.addCandidate(c);
-      } catch (e) {}
+      try { await pc.addCandidate(c); } catch (e) {}
     }
     pendingCandidates.remove(peerId);
   }
 
   Future<void> dispose() async {
-    debugPrint('[DISPOSE] Cleaning up signaling');
-
-    if (screenStream != null) {
-      await stopScreenShare();
-    }
-
-    for (var pc in pcs.values) {
-      await pc.close();
-    }
+    if (screenStream != null) await stopScreenShare();
+    for (var pc in pcs.values) await pc.close();
     pcs.clear();
-
     for (var stream in remoteStreams.values) {
-      for (var track in stream.getTracks()) {
-        track.stop();
-      }
+      for (var track in stream.getTracks()) track.stop();
     }
     remoteStreams.clear();
     streamToPeer.clear();
     peerToStreams.clear();
     streamIsScreen.clear();
-    peerVideoStreamCount.clear(); // ✅ Clean video counts
+    peerVideoStreamCount.clear();
     clientToUser.clear();
     userToClient.clear();
-
     localStream?.getTracks().forEach((t) => t.stop());
     _channel?.sink.close();
   }
 
-  String? getUserId(String clientId) {
-    return clientToUser[clientId];
-  }
-
+  String? getUserId(String clientId) => clientToUser[clientId];
   bool get isScreenSharing => screenStream != null;
 }
 
-// VideoCallPage và MeetLayout giữ nguyên như version trước
-// Chỉ import dart:math để dùng max() function
-
-// VideoCallPage remains mostly the same, just update onAddRemoteStream signature
 class VideoCallPage extends StatefulWidget {
   final String roomId;
   final String userId;
@@ -619,7 +468,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
   final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
   final Map<String, RTCVideoRenderer> _remoteRenderers = {};
   final Map<String, String?> _rendererToUserId = {};
-  final Map<String, bool> _rendererIsScreen = {}; // ✅ Track screen renderers
+  final Map<String, bool> _rendererIsScreen = {};
 
   Signaling? signaling;
   bool isOnMic = true;
@@ -643,14 +492,8 @@ class _VideoCallPageState extends State<VideoCallPage> {
     _localRenderer.srcObject = signaling!.localStream;
     await signaling!.start(widget.roomId);
 
-    // ✅ Updated signature with isScreen parameter
     signaling!.onAddRemoteStream = (streamId, stream, userId, isScreen) async {
-      debugPrint('[UI] onAddRemoteStream: streamId=$streamId, userId=$userId, isScreen=$isScreen');
-
-      if (_remoteRenderers.containsKey(streamId)) {
-        debugPrint('[UI_WARNING] Renderer already exists for $streamId');
-        return;
-      }
+      if (_remoteRenderers.containsKey(streamId)) return;
 
       final renderer = RTCVideoRenderer();
       await renderer.initialize();
@@ -660,15 +503,12 @@ class _VideoCallPageState extends State<VideoCallPage> {
         setState(() {
           _remoteRenderers[streamId] = renderer;
           _rendererToUserId[streamId] = userId;
-          _rendererIsScreen[streamId] = isScreen; // ✅ Track if screen
-          debugPrint('[UI] ✅ Added renderer (isScreen=$isScreen), total: ${_remoteRenderers.length}');
+          _rendererIsScreen[streamId] = isScreen;
         });
       }
     };
 
     signaling!.onRemoveRemoteStream = (streamId) {
-      debugPrint('[UI] onRemoveRemoteStream: $streamId');
-
       final renderer = _remoteRenderers[streamId];
       if (renderer != null) {
         renderer.srcObject = null;
@@ -679,18 +519,13 @@ class _VideoCallPageState extends State<VideoCallPage> {
         setState(() {
           _remoteRenderers.remove(streamId);
           _rendererToUserId.remove(streamId);
-          _rendererIsScreen.remove(streamId); // ✅ Clean screen flag
-          debugPrint('[UI] ✅ Removed renderer, remaining: ${_remoteRenderers.length}');
+          _rendererIsScreen.remove(streamId);
         });
       }
     };
 
     signaling!.onScreenShareEnded = () {
-      if (mounted) {
-        setState(() {
-          isSharingScreen = false;
-        });
-      }
+      if (mounted) setState(() => isSharingScreen = false);
     };
   }
 
@@ -708,21 +543,25 @@ class _VideoCallPageState extends State<VideoCallPage> {
     super.dispose();
   }
 
+  // ✅ FIX 2: Add "Screen: " prefix
   Future<String> getNameByStreamId(String streamId) async {
     if (streamId == widget.userId) return 'You';
 
     final userId = _rendererToUserId[streamId];
-    if (userId == null) return 'User $streamId';
+    final isScreen = _rendererIsScreen[streamId] ?? false;
 
-    if (widget.getUserName != null) {
-      try {
-        return await widget.getUserName!(userId);
-      } catch (e) {
-        debugPrint('[ERROR] Failed to get username: $e');
-      }
+    if (userId == null) {
+      return isScreen ? 'Screen: User $streamId' : 'User $streamId';
     }
 
-    return 'User $userId';
+    String name = 'User $userId';
+    if (widget.getUserName != null) {
+      try {
+        name = await widget.getUserName!(userId);
+      } catch (e) {}
+    }
+
+    return isScreen ? 'Screen: $name' : name;
   }
 
   Future<String> getAvatarByStreamId(String streamId) async {
@@ -734,87 +573,11 @@ class _VideoCallPageState extends State<VideoCallPage> {
     if (widget.getUserAvatar != null) {
       try {
         return await widget.getUserAvatar!(userId);
-      } catch (e) {
-        debugPrint('[ERROR] Failed to get avatar: $e');
-      }
+      } catch (e) {}
     }
 
     final name = await getNameByStreamId(streamId);
     return 'https://ui-avatars.com/api/?name=$name&background=random';
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    final day = dateTime.day.toString().padLeft(2, '0');
-    final month = dateTime.month.toString().padLeft(2, '0');
-    final year = dateTime.year;
-    final hour = dateTime.hour.toString().padLeft(2, '0');
-    final minute = dateTime.minute.toString().padLeft(2, '0');
-
-    return '$day/$month/$year $hour:$minute';
-  }
-
-  void _showMeetingInfo() {
-    if (widget.meetingInfo == null) return;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.info_outline, color: Colors.blue),
-            SizedBox(width: 8),
-            Text('Thông tin cuộc họp'),
-          ],
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildInfoItem('Tiêu đề', widget.meetingInfo.title ?? 'N/A'),
-              if (widget.meetingInfo.description?.isNotEmpty ?? false)
-                _buildInfoItem('Mô tả', widget.meetingInfo.description),
-              _buildInfoItem('Room ID', widget.roomId),
-              _buildInfoItem('Thời gian', _formatDateTime(widget.meetingInfo.time ?? DateTime.now())),
-              _buildInfoItem('Số thành viên', '${widget.meetingInfo.members?.length ?? 0} người'),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('Đóng'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoItem(String label, String value) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -822,7 +585,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Text(widget.meetingInfo?.title ?? 'Meeting - Room: ${widget.roomId}'),
+        title: Text(widget.meetingInfo?.title ?? 'Meeting'),
         actions: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -833,13 +596,16 @@ class _VideoCallPageState extends State<VideoCallPage> {
                   color: Colors.white.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
+                // ✅ FIX 1: Remove /total, count only camera streams
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(Icons.people, size: 16),
                     SizedBox(width: 4),
                     Text(
-                      '${_remoteRenderers.length + 1}/${widget.meetingInfo?.members?.length ?? '?'}',
+                      '${_remoteRenderers.keys
+                          .where((key) => !(_rendererIsScreen[key] ?? false))
+                          .length + 1}',
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                     ),
                   ],
@@ -850,30 +616,16 @@ class _VideoCallPageState extends State<VideoCallPage> {
           PopupMenuButton<String>(
             icon: Icon(Icons.more_vert),
             onSelected: (value) {
-              if (value == 'info') {
-                _showMeetingInfo();
-              } else if (value == 'leave') {
-                Navigator.of(context).pop();
-              }
+              if (value == 'leave') Navigator.of(context).pop();
             },
             itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'info',
-                child: Row(
-                  children: [
-                    Icon(Icons.info_outline, size: 20),
-                    SizedBox(width: 8),
-                    Text('Thông tin cuộc họp'),
-                  ],
-                ),
-              ),
               PopupMenuItem(
                 value: 'leave',
                 child: Row(
                   children: [
                     Icon(Icons.exit_to_app, size: 20, color: Colors.red),
                     SizedBox(width: 8),
-                    Text('Rời khỏi cuộc họp', style: TextStyle(color: Colors.red)),
+                    Text('Rời khỏi', style: TextStyle(color: Colors.red)),
                   ],
                 ),
               ),
@@ -886,7 +638,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
           MeetLayout(
             localRenderer: _localRenderer,
             remoteRenderers: _remoteRenderers,
-            rendererIsScreen: _rendererIsScreen, // ✅ Pass screen flags
+            rendererIsScreen: _rendererIsScreen,
             userId: widget.userId,
             getNameByStreamId: getNameByStreamId,
             getAvatarByStreamId: getAvatarByStreamId,
@@ -927,12 +679,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
                       try {
                         await signaling?.startScreenShare();
                         setState(() => isSharingScreen = true);
-                      } catch (e) {
-                        debugPrint('[ERROR] Failed to start screen share: $e');
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Không thể chia sẻ màn hình')),
-                        );
-                      }
+                      } catch (e) {}
                     }
                   },
                   isActive: isSharingScreen,
@@ -980,11 +727,10 @@ class _VideoCallPageState extends State<VideoCallPage> {
   }
 }
 
-// MeetLayout with screen detection
 class MeetLayout extends StatelessWidget {
   final RTCVideoRenderer localRenderer;
   final Map<String, RTCVideoRenderer> remoteRenderers;
-  final Map<String, bool> rendererIsScreen; // ✅ Screen flags
+  final Map<String, bool> rendererIsScreen;
   final String userId;
   final Future<String> Function(String) getNameByStreamId;
   final Future<String> Function(String) getAvatarByStreamId;
@@ -1003,13 +749,11 @@ class MeetLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Separate screen shares and camera streams
     final screenShares = <String, RTCVideoRenderer>{};
     final cameraStreams = <String, RTCVideoRenderer>{};
 
     remoteRenderers.forEach((key, value) {
-      final isScreen = rendererIsScreen[key] ?? false;
-      if (isScreen) {
+      if (rendererIsScreen[key] ?? false) {
         screenShares[key] = value;
       } else {
         cameraStreams[key] = value;
@@ -1047,13 +791,7 @@ class MeetLayout extends StatelessWidget {
                 )
                     : Container(
                   color: Colors.grey[900],
-                  child: Center(
-                    child: Icon(
-                      Icons.screen_share,
-                      size: 64,
-                      color: Colors.white38,
-                    ),
-                  ),
+                  child: Icon(Icons.screen_share, size: 64, color: Colors.white38),
                 ),
               ),
             ),
@@ -1071,7 +809,7 @@ class MeetLayout extends StatelessWidget {
                 final entry = allCameras.entries.elementAt(index);
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: _buildCameraThumbnail(entry.key, entry.value),
+                  child: _buildThumbnail(entry.key, entry.value),
                 );
               },
             ),
@@ -1081,9 +819,9 @@ class MeetLayout extends StatelessWidget {
     );
   }
 
-  Widget _buildCameraThumbnail(String id, RTCVideoRenderer renderer) {
+  Widget _buildThumbnail(String id, RTCVideoRenderer renderer) {
     final isLocal = id == userId;
-    final shouldShowVideo = isLocal ? isLocalCameraOn : true;
+    final shouldShow = isLocal ? isLocalCameraOn : true;
 
     return FutureBuilder<String>(
       future: getNameByStreamId(id),
@@ -1101,13 +839,9 @@ class MeetLayout extends StatelessWidget {
             borderRadius: BorderRadius.circular(6),
             child: Stack(
               children: [
-                if (renderer.srcObject != null && shouldShowVideo)
+                if (renderer.srcObject != null && shouldShow)
                   Positioned.fill(
-                    child: RTCVideoView(
-                      renderer,
-                      mirror: isLocal,
-                      objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                    ),
+                    child: RTCVideoView(renderer, mirror: isLocal, objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover),
                   )
                 else
                   Positioned.fill(
@@ -1117,27 +851,10 @@ class MeetLayout extends StatelessWidget {
                         return Container(
                           color: Colors.grey[800],
                           child: Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                CircleAvatar(
-                                  radius: 30,
-                                  backgroundImage: avatarSnapshot.hasData
-                                      ? NetworkImage(avatarSnapshot.data!)
-                                      : null,
-                                  child: !avatarSnapshot.hasData
-                                      ? Icon(Icons.person)
-                                      : null,
-                                ),
-                                if (!shouldShowVideo && isLocal) ...[
-                                  SizedBox(height: 8),
-                                  Icon(
-                                    Icons.videocam_off,
-                                    color: Colors.white60,
-                                    size: 20,
-                                  ),
-                                ],
-                              ],
+                            child: CircleAvatar(
+                              radius: 30,
+                              backgroundImage: avatarSnapshot.hasData ? NetworkImage(avatarSnapshot.data!) : null,
+                              child: !avatarSnapshot.hasData ? Icon(Icons.person) : null,
                             ),
                           ),
                         );
@@ -1149,18 +866,8 @@ class MeetLayout extends StatelessWidget {
                   bottom: 6,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: Colors.black87,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      name,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                    decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(4)),
+                    child: Text(name, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500)),
                   ),
                 ),
               ],
@@ -1176,20 +883,8 @@ class MeetLayout extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        double width = constraints.maxWidth;
-        double height = constraints.maxHeight;
-
-        int columns = (total <= 1)
-            ? 1
-            : (total <= 4)
-            ? 2
-            : (total <= 9)
-            ? 3
-            : 4;
+        int columns = total <= 1 ? 1 : total <= 4 ? 2 : total <= 9 ? 3 : 4;
         int rows = (total / columns).ceil();
-
-        double tileWidth = width / columns;
-        double tileHeight = height / rows;
 
         return Center(
           child: Wrap(
@@ -1197,8 +892,8 @@ class MeetLayout extends StatelessWidget {
             runSpacing: 0,
             children: allCameras.entries.map((e) {
               return SizedBox(
-                width: tileWidth,
-                height: tileHeight,
+                width: constraints.maxWidth / columns,
+                height: constraints.maxHeight / rows,
                 child: _buildVideoTile(e.key, e.value),
               );
             }).toList(),
@@ -1210,7 +905,7 @@ class MeetLayout extends StatelessWidget {
 
   Widget _buildVideoTile(String id, RTCVideoRenderer renderer) {
     final isLocal = id == userId;
-    final shouldShowVideo = isLocal ? isLocalCameraOn : true;
+    final shouldShow = isLocal ? isLocalCameraOn : true;
 
     return FutureBuilder<String>(
       future: getNameByStreamId(id),
@@ -1229,13 +924,9 @@ class MeetLayout extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
               child: Stack(
                 children: [
-                  if (renderer.srcObject != null && shouldShowVideo)
+                  if (renderer.srcObject != null && shouldShow)
                     Positioned.fill(
-                      child: RTCVideoView(
-                        renderer,
-                        mirror: isLocal,
-                        objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
-                      ),
+                      child: RTCVideoView(renderer, mirror: isLocal, objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover),
                     )
                   else
                     Positioned.fill(
@@ -1250,30 +941,11 @@ class MeetLayout extends StatelessWidget {
                                 children: [
                                   CircleAvatar(
                                     radius: 40,
-                                    backgroundImage: avatarSnapshot.hasData
-                                        ? NetworkImage(avatarSnapshot.data!)
-                                        : null,
-                                    child: !avatarSnapshot.hasData
-                                        ? Icon(Icons.person, size: 40)
-                                        : null,
+                                    backgroundImage: avatarSnapshot.hasData ? NetworkImage(avatarSnapshot.data!) : null,
+                                    child: !avatarSnapshot.hasData ? Icon(Icons.person, size: 40) : null,
                                   ),
                                   SizedBox(height: 8),
-                                  Text(
-                                    name,
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  if (!shouldShowVideo && isLocal) ...[
-                                    SizedBox(height: 4),
-                                    Icon(
-                                      Icons.videocam_off,
-                                      color: Colors.white60,
-                                      size: 24,
-                                    ),
-                                  ],
+                                  Text(name, style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500)),
                                 ],
                               ),
                             ),
@@ -1286,29 +958,8 @@ class MeetLayout extends StatelessWidget {
                     bottom: 8,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.black87,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.person,
-                            size: 14,
-                            color: Colors.white70,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            name,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
+                      decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(4)),
+                      child: Text(name, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
                     ),
                   ),
                 ],
