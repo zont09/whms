@@ -218,6 +218,107 @@ class WorkingRepository {
     }
   }
 
+  Future<ResponseModel<List<WorkingUnitModel>>> getProjectsForUser(
+      String userId) async {
+    try {
+      var query = await db
+          .collection("whms_pls_working_unit")
+          .where('enable', isEqualTo: true)
+          .where('type', isEqualTo: 'Dự án') // Filter by project type
+          .where("assignees", arrayContains: userId) // User is assignee
+          .orderBy('updateAt', descending: true)
+          .limit(50) // Limit to recent projects
+          .get();
+
+      if (query.docs.isEmpty) {
+        return ResponseModel(
+          status: ResponseStatus.ok,
+          results: [],
+        );
+      }
+
+      return ResponseModel(
+        status: ResponseStatus.ok,
+        results: query.docs
+            .map((e) => WorkingUnitModel.fromSnapshot(e))
+            .toList(),
+      );
+    } catch (e) {
+      debugPrint("===> error fetching projects: $e");
+      return ResponseModel(
+        status: ResponseStatus.error,
+        error: ErrorModel(text: '==========> Error $e'),
+      );
+    }
+  }
+
+  /// Lấy project theo ID
+  Future<WorkingUnitModel?> getProjectById(String projectId) async {
+    try {
+      var doc = await db
+          .collection("whms_pls_working_unit")
+          .doc(projectId)
+          .get();
+
+      if (!doc.exists) return null;
+
+      return WorkingUnitModel.fromSnapshot(doc);
+    } catch (e) {
+      debugPrint("===> error fetching project by id: $e");
+      return null;
+    }
+  }
+
+  /// Lấy cả scope và project của user
+  Future<ResponseModel<Map<String, List<WorkingUnitModel>>>>
+  getScopesAndProjectsForUser(String userId) async {
+    try {
+      // Get scopes (existing logic)
+      var scopesQuery = await db
+          .collection("whms_pls_working_unit")
+          .where('enable', isEqualTo: true)
+          .where("assignees", arrayContains: userId)
+          .where('type', isNotEqualTo: 'Dự án') // Not projects
+          .orderBy('type')
+          .orderBy('updateAt', descending: true)
+          .limit(30)
+          .get();
+
+      // Get projects
+      var projectsQuery = await db
+          .collection("whms_pls_working_unit")
+          .where('enable', isEqualTo: true)
+          .where('type', isEqualTo: 'Dự án')
+          .where("assignees", arrayContains: userId)
+          .orderBy('updateAt', descending: true)
+          .limit(30)
+          .get();
+
+      var scopes = scopesQuery.docs
+          .map((e) => WorkingUnitModel.fromSnapshot(e))
+          .toList();
+
+      var projects = projectsQuery.docs
+          .map((e) => WorkingUnitModel.fromSnapshot(e))
+          .toList();
+
+      return ResponseModel(
+        status: ResponseStatus.ok,
+        results: {
+          'scopes': scopes,
+          'projects': projects,
+        },
+      );
+    } catch (e) {
+      debugPrint("===> error fetching scopes and projects: $e");
+      return ResponseModel(
+        status: ResponseStatus.error,
+        error: ErrorModel(text: '==========> Error $e'),
+      );
+    }
+  }
+
+
   Future<ResponseModel<List<WorkingUnitModel>>> getWorkingUnitForUserUpdated(
       DateTime date, String idU) async {
     try {

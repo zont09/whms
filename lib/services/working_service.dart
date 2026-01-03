@@ -80,6 +80,20 @@ class WorkingService {
     return [];
   }
 
+  Future<ResponseModel<List<WorkingUnitModel>>> getProjectsForUser(
+      String userId) async {
+    return await WorkingRepository.instance.getProjectsForUser(userId);
+  }
+
+  Future<WorkingUnitModel?> getProjectById(String projectId) async {
+    return await WorkingRepository.instance.getProjectById(projectId);
+  }
+
+  Future<ResponseModel<Map<String, List<WorkingUnitModel>>>>
+  getScopesAndProjectsForUser(String userId) async {
+    return await WorkingRepository.instance.getScopesAndProjectsForUser(userId);
+  }
+
   Future<List<WorkingUnitModel>> getWorkingUnitForUserUpdated(
       DateTime date, String idU) async {
     final response = await WorkingRepository.instance

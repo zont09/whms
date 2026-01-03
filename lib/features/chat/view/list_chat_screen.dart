@@ -7,10 +7,12 @@ import 'package:whms/configs/config_cubit.dart';
 import 'dart:convert';
 
 import 'package:whms/features/chat/view/chat_popup.dart';
+import 'package:whms/models/response_model.dart';
+import 'package:whms/models/working_unit_model.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:whms/services/working_service.dart';
+import 'package:whms/untils/app_text.dart';
 
-void main() {
-  runApp(const MyApp());
-}
 
 class AppColors {
   static const Color primary1 = Color(0xFF0448db);
@@ -18,262 +20,11 @@ class AppColors {
   static const Color primary3 = Color(0xFF0086f3);
   static const Color primary4 = Color(0xFF0099d8);
   static const Color primary5 = Color(0xFFabc5ff);
+
+  // Colors for distinguishing scopes and projects
+  static const Color scopeColor = Color(0xFF00C853); // Green for scopes
+  static const Color projectColor = Color(0xFFFF6D00); // Orange for projects
 }
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Multi Chat Manager',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primaryColor: AppColors.primary2,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary2,
-          primary: AppColors.primary2,
-        ),
-        useMaterial3: true,
-      ),
-      home: const DemoScreen(),
-    );
-  }
-}
-
-// NEW: Main demo screen with user ID input
-class DemoScreen extends StatefulWidget {
-  const DemoScreen({super.key});
-
-  @override
-  State<DemoScreen> createState() => _DemoScreenState();
-}
-
-class _DemoScreenState extends State<DemoScreen> {
-  final TextEditingController _userIdController = TextEditingController(text: 'think');
-  final TextEditingController _apiUrlController = TextEditingController(text: 'http://127.0.0.1:8000/api');
-  String? _currentUserId;
-
-  @override
-  void dispose() {
-    _userIdController.dispose();
-    _apiUrlController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.primary5.withOpacity(0.2),
-              AppColors.primary4.withOpacity(0.1),
-            ],
-          ),
-        ),
-        child: Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 500),
-            margin: const EdgeInsets.all(32),
-            child: Card(
-              elevation: 12,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(40),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [AppColors.primary2, AppColors.primary3],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.chat_bubble_rounded,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Multi Chat Manager',
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'Real-time messaging',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-                    _buildTextField(
-                      controller: _apiUrlController,
-                      label: 'API Base URL',
-                      icon: Icons.link,
-                      hint: 'http://localhost:8000/api',
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      controller: _userIdController,
-                      label: 'User ID',
-                      icon: Icons.person,
-                      hint: 'Enter your user ID',
-                    ),
-                    const SizedBox(height: 28),
-                    Container(
-                      height: 56,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppColors.primary2, AppColors.primary3],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary2.withOpacity(0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: () {
-                            if (_userIdController.text.trim().isEmpty) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Please enter User ID')),
-                              );
-                              return;
-                            }
-                            setState(() {
-                              _currentUserId = _userIdController.text.trim();
-                            });
-                          },
-                          child: Center(
-                            child: Text(
-                              _currentUserId == null ? 'Bắt đầu Chat' : 'Đổi User ID',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (_currentUserId != null) ...[
-                      const SizedBox(height: 16),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary5.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppColors.primary5.withOpacity(0.3),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.check_circle,
-                                color: AppColors.primary2, size: 20),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Đã đăng nhập: $_currentUserId',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-      floatingActionButton: _currentUserId != null
-          ? MultiChatManager(
-        userId: _currentUserId!,
-        conversationIds: ['g1', 'conv_2', 'conv_3', 'conv_4', 'conv_5'],
-        apiBaseUrl: _apiUrlController.text,
-      )
-          : null,
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    required String hint,
-  }) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixIcon: Icon(icon, color: AppColors.primary3),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary2, width: 2),
-        ),
-      ),
-    );
-  }
-}
-
-class ConversationInfo {
-  final String conversationId;
-  int unreadCount;
-  String? lastMessageId;
-  bool isConnected;
-
-  ConversationInfo({
-    required this.conversationId,
-    this.unreadCount = 0,
-    this.lastMessageId,
-    this.isConnected = false,
-  });
-}
-
 class MultiChatManager extends StatefulWidget {
   final String userId;
   final List<String> conversationIds;
@@ -291,323 +42,320 @@ class MultiChatManager extends StatefulWidget {
 }
 
 class _MultiChatManagerState extends State<MultiChatManager>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   bool _isExpanded = false;
   String? _selectedConversationId;
-  late AnimationController _expandController;
+  late AnimationController _animationController;
   late Animation<double> _expandAnimation;
 
-  // WebSocket management
   final Map<String, WebSocketChannel> _channels = {};
   final Map<String, ConversationInfo> _conversationInfos = {};
   final Map<String, StreamController<Map<String, dynamic>>> _messageControllers = {};
 
+  // Loading state for scopes and projects
+  bool _isLoadingWorkUnits = true;
+  List<WorkingUnitModel> _projects = [];
+  String? _loadError;
+
   @override
   void initState() {
     super.initState();
-    _expandController = AnimationController(
-      vsync: this,
+    _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
+      vsync: this,
     );
     _expandAnimation = CurvedAnimation(
-      parent: _expandController,
-      curve: Curves.easeOutCubic,
+      parent: _animationController,
+      curve: Curves.easeInOut,
     );
-
-    // Initialize conversation infos
+    final scopeMap = ConfigsCubit.fromContext(context).allScopeMap;
+    // Initialize WebSocket connections for all conversations
     for (var convId in widget.conversationIds) {
-      _messageControllers[convId] = StreamController<Map<String, dynamic>>.broadcast(); // ✅ THÊM
-      _conversationInfos[convId] = ConversationInfo(conversationId: convId);
+      _connectWebSocket(convId);
+      _messageControllers[convId] = StreamController<Map<String, dynamic>>.broadcast();
+
+      // Initialize conversation info
+      _conversationInfos[convId] = ConversationInfo(
+        id: convId,
+        name: scopeMap[convId]?.title ?? convId,
+        isConnected: false,
+        unreadCount: 0,
+        type: 'conversation',
+        avatarUrl: null,
+      );
     }
 
-    // Connect to all WebSockets
-    _connectAllWebSockets();
+    // Load scopes and projects
+    _loadScopesAndProjects();
   }
 
-  @override
-  void dispose() {
-    _expandController.dispose();
-    _disconnectAllWebSockets();
-    for (var controller in _messageControllers.values) {
-      controller.close();
-    }
-    _messageControllers.clear();
-    super.dispose();
-  }
+  Future<void> _loadScopesAndProjects() async {
+    setState(() {
+      _isLoadingWorkUnits = true;
+      _loadError = null;
+    });
 
-  void _connectAllWebSockets() {
-    for (var conversationId in widget.conversationIds) {
-      _connectWebSocket(conversationId);
-    }
-  }
+    try {
+      final projectService = WorkingService.instance;
+      final result = await projectService.getScopesAndProjectsForUser(widget.userId);
 
-  void _handleNewMessage(String conversationId, Map<String, dynamic> message) {
-    print('=== Handling new message for $conversationId ===');
-    print('Message data: $message');
+      if (result.status == ResponseStatus.ok && result.results != null) {
+        setState(() {
+          _projects = result.results!['projects'] ?? [];
+          _isLoadingWorkUnits = false;
+        });
 
-    final info = _conversationInfos[conversationId];
-    if (info == null) {
-      print('No conversation info found for $conversationId');
-      return;
-    }
+        // Initialize scopes and projects in conversation infos
+        _initializeScopesAndProjects();
 
-    final messageId = message['id'] as String?;
-    final senderId = message['sender_id'] as String?;
+        // Connect WebSocket for scopes and projects
 
-    print('Message ID: $messageId, Sender: $senderId, Current user: ${widget.userId}');
-    print('Selected conversation: $_selectedConversationId');
-
-    // Only increment unread count if:
-    // 1. Message is not from current user
-    // 2. This conversation is not currently selected (being viewed)
-    if (senderId != widget.userId && _selectedConversationId != conversationId) {
-      // Check if this is a new message (not duplicate)
-      if (messageId != null && messageId != info.lastMessageId) {
-        print('✅ Incrementing unread count for $conversationId');
-        if (mounted) {
-          setState(() {
-            info.unreadCount++;
-            info.lastMessageId = messageId;
-          });
+        for (var project in _projects) {
+          _connectWebSocket(project.id);
+          _messageControllers[project.id] = StreamController<Map<String, dynamic>>.broadcast();
         }
       } else {
-        print('⚠️ Duplicate message or no message ID, skipping unread increment');
-      }
-    } else if (_selectedConversationId == conversationId) {
-      print('👁️ Currently viewing $conversationId, not incrementing unread');
-      if (mounted) {
         setState(() {
-          info.lastMessageId = messageId;
+          _isLoadingWorkUnits = false;
+          _loadError = 'Không thể tải scopes và projects';
         });
       }
-    } else if (senderId == widget.userId) {
-      print('📤 Message from current user, skipping unread increment');
+    } catch (e) {
+      print('Error loading scopes and projects: $e');
+      setState(() {
+        _isLoadingWorkUnits = false;
+        _loadError = 'Lỗi: $e';
+      });
+    }
+  }
+
+  void _initializeScopesAndProjects() {
+    // Add scopes as conversations
+    for (var project in _projects) {
+      _conversationInfos[project.id] = ConversationInfo(
+        id: project.id,
+        name: project.title,
+        isConnected: false,
+        unreadCount: 0,
+        type: 'project',
+        avatarUrl: null,
+      );
     }
   }
 
   void _connectWebSocket(String conversationId) {
     try {
-      // Đóng connection cũ nếu có
-      if (_channels.containsKey(conversationId)) {
-        print('🔌 Closing existing WebSocket for $conversationId');
-        _channels[conversationId]?.sink.close();
-        _channels.remove(conversationId);
-      }
+      print('🔌 Connecting WebSocket for conversation: $conversationId');
 
       final wsUrl = widget.apiBaseUrl.replaceFirst('http', 'ws');
-      final uri = Uri.parse('$wsUrl/ws/chat/$conversationId/${widget.userId}');
+      final channel = WebSocketChannel.connect(
+        Uri.parse('$wsUrl/ws/$conversationId/${widget.userId}'),
+      );
 
-      print('🔗 Connecting WebSocket for $conversationId: $uri');
-
-      final channel = WebSocketChannel.connect(uri);
       _channels[conversationId] = channel;
 
-      if (mounted) {
-        setState(() {
-          _conversationInfos[conversationId]?.isConnected = true;
-        });
-      }
+      // Update connection status
+      setState(() {
+        final info = _conversationInfos[conversationId];
+        if (info != null) {
+          _conversationInfos[conversationId] = ConversationInfo(
+            id: info.id,
+            name: info.name,
+            isConnected: true,
+            unreadCount: info.unreadCount,
+            type: info.type,
+            avatarUrl: info.avatarUrl,
+          );
+        }
+      });
 
-      print('✅ WebSocket connected for $conversationId');
-
-      // CRITICAL FIX: Setup listener properly
+      // Listen to messages
       channel.stream.listen(
             (message) {
-          print('📩 RAW WebSocket message on $conversationId: $message');
-          try {
-            final data = json.decode(message);
-            print('📦 Parsed data: ${json.encode(data)}');
-            print('📋 Message type: ${data['type']}');
+          print('📨 Received WebSocket message in MultiChat: $message');
+          final data = jsonDecode(message);
 
-            if (data['type'] == 'message' && data['message'] != null) {
-              print('✅ Valid message received for $conversationId');
-
-              // ✅ THÊM đoạn này - Broadcast đến ChatWidget
-              if (_messageControllers.containsKey(conversationId)) {
-                print('📡 Broadcasting message to ChatWidget stream');
-                _messageControllers[conversationId]!.add(data['message']);
-              }
-
-              _handleNewMessage(conversationId, data['message']);
-            } else {
-              print('⚠️ Not a valid message type or missing message data');
+          if (data['type'] == 'message') {
+            // Update unread count if not selected
+            if (_selectedConversationId != conversationId) {
+              setState(() {
+                final info = _conversationInfos[conversationId];
+                if (info != null) {
+                  _conversationInfos[conversationId] = ConversationInfo(
+                    id: info.id,
+                    name: info.name,
+                    isConnected: info.isConnected,
+                    unreadCount: info.unreadCount + 1,
+                    type: info.type,
+                    avatarUrl: info.avatarUrl,
+                  );
+                }
+              });
             }
-          } catch (e, stackTrace) {
-            print('❌ Error parsing message for $conversationId: $e');
-            print('Stack trace: $stackTrace');
-            print('Raw message was: $message');
+
+            // Forward message to the message controller
+            _messageControllers[conversationId]?.add(data);
           }
         },
         onError: (error) {
-          print('❌ WebSocket ERROR for $conversationId: $error');
-          if (mounted) {
-            setState(() {
-              _conversationInfos[conversationId]?.isConnected = false;
-            });
-          }
-
-          // Reconnect after 5 seconds
-          Future.delayed(const Duration(seconds: 5), () {
-            if (mounted) {
-              print('🔄 Attempting to reconnect $conversationId...');
-              _connectWebSocket(conversationId);
-            }
-          });
+          print('❌ WebSocket error for $conversationId: $error');
+          _updateConnectionStatus(conversationId, false);
         },
         onDone: () {
-          print('🔌 WebSocket CLOSED for $conversationId');
-          if (mounted) {
-            setState(() {
-              _conversationInfos[conversationId]?.isConnected = false;
-            });
-          }
-
-          // Reconnect after 5 seconds
-          Future.delayed(const Duration(seconds: 5), () {
-            if (mounted) {
-              print('🔄 Attempting to reconnect $conversationId...');
-              _connectWebSocket(conversationId);
-            }
-          });
+          print('🔌 WebSocket closed for $conversationId');
+          _updateConnectionStatus(conversationId, false);
         },
-        cancelOnError: false,
       );
     } catch (e) {
       print('❌ Error connecting WebSocket for $conversationId: $e');
-      if (mounted) {
-        setState(() {
-          _conversationInfos[conversationId]?.isConnected = false;
-        });
-      }
+      _updateConnectionStatus(conversationId, false);
     }
   }
 
-  void _disconnectAllWebSockets() {
+  void _updateConnectionStatus(String conversationId, bool isConnected) {
+    setState(() {
+      final info = _conversationInfos[conversationId];
+      if (info != null) {
+        _conversationInfos[conversationId] = ConversationInfo(
+          id: info.id,
+          name: info.name,
+          isConnected: isConnected,
+          unreadCount: info.unreadCount,
+          type: info.type,
+          avatarUrl: info.avatarUrl,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
     for (var channel in _channels.values) {
       channel.sink.close();
     }
-    _channels.clear();
-  }
-
-  void _markAsRead(String conversationId) {
-    if (mounted) {
-      setState(() {
-        _conversationInfos[conversationId]?.unreadCount = 0;
-      });
+    for (var controller in _messageControllers.values) {
+      controller.close();
     }
+    super.dispose();
   }
 
-  int _getTotalUnreadCount() {
-    return _conversationInfos.values
-        .fold(0, (sum, info) => sum + info.unreadCount);
-  }
-
-  String? _getConversationAvatar(String conversationId) {
-    // final cfC =ConfigsCubit.fromContext(context);
-    // final scopeAvt = cfC.allScopeMap[conversationId]?.;
-    return null;
-  }
-
-  String _getConversationName(String conversationId) {
-    final cfC =ConfigsCubit.fromContext(context);
-    final scope = cfC.allScopeMap[conversationId]?.title;
-    return scope ?? conversationId;
-  }
-
-  void _toggleExpanded() {
+  void _toggleExpand() {
     setState(() {
       _isExpanded = !_isExpanded;
       if (_isExpanded) {
-        _expandController.forward();
+        _animationController.forward();
       } else {
-        _expandController.reverse();
+        _animationController.reverse();
         _selectedConversationId = null;
       }
     });
   }
 
   void _selectConversation(String conversationId) {
-    print('🎯 Selecting conversation: $conversationId (previous: $_selectedConversationId)');
+    print('🎯 Selecting conversation: $conversationId');
+    print('Current selected: $_selectedConversationId');
+
     setState(() {
+      // Reset unread count
+      final info = _conversationInfos[conversationId];
+      if (info != null) {
+        _conversationInfos[conversationId] = ConversationInfo(
+          id: info.id,
+          name: info.name,
+          isConnected: info.isConnected,
+          unreadCount: 0,
+          type: info.type,
+          avatarUrl: info.avatarUrl,
+        );
+      }
+
       if (_selectedConversationId == conversationId) {
+        print('❌ Closing current conversation');
         _selectedConversationId = null;
       } else {
+        print('✅ Opening new conversation: $conversationId');
         _selectedConversationId = conversationId;
-        _markAsRead(conversationId);
       }
     });
+  }
+
+  String _getConversationName(String conversationId) {
+    final info = _conversationInfos[conversationId];
+    if (info != null && info.name.isNotEmpty) {
+      return info.name;
+    }
+
+    // Fallback for regular conversations
+    final Map<String, String> names = {
+      'g1': 'Nhóm 1',
+      'conv_2': 'Nhóm 2',
+      'conv_3': 'Nhóm 3',
+      'conv_4': 'Nhóm 4',
+      'conv_5': 'Nhóm 5',
+    };
+    return names[conversationId] ?? conversationId;
+  }
+
+  String? _getConversationAvatar(String conversationId) {
+    // For scopes and projects, we can return null or use icon
+    final info = _conversationInfos[conversationId];
+    if (info != null && (info.type == 'scope' || info.type == 'project')) {
+      return null; // Will show icon instead
+    }
+
+    // Fallback for regular conversations
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
     return Stack(
-      alignment: Alignment.bottomRight,
+      clipBehavior: Clip.none,
       children: [
-        // Chat popup - CRITICAL: Use UniqueKey for each conversation change
-        if (_selectedConversationId != null)
-          Positioned(
-            bottom: 20,
-            right: 100,
-            child: _buildChatPopup(_selectedConversationId!),
-          ),
-
+        // Conversation list (expanded)
         if (_isExpanded)
           Positioned(
-            bottom: 100,
-            right: 20,
+            bottom: 80,
+            right: 16,
             child: _buildConversationList(),
           ),
 
+        // Selected chat popup
+        if (_selectedConversationId != null)
+          Positioned(
+            bottom: 80,
+            right: _isExpanded ? 100 : 80,
+            child: _buildChatPopup(_selectedConversationId!),
+          ),
+
+        // Main FAB
         Positioned(
-          bottom: 20,
-          right: 20,
-          child: _buildMainButton(),
+          bottom: 16,
+          right: 16,
+          child: _buildMainFAB(),
         ),
       ],
     );
   }
 
-  Widget _buildMainButton() {
-    final totalUnread = _getTotalUnreadCount();
+  Widget _buildMainFAB() {
+    final totalUnread = _conversationInfos.values
+        .fold<int>(0, (sum, info) => sum + info.unreadCount);
 
     return Stack(
       clipBehavior: Clip.none,
       children: [
-        Container(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [AppColors.primary2, AppColors.primary3],
-            ),
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary2.withOpacity(0.4),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(30),
-              onTap: _toggleExpanded,
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: AnimatedRotation(
-                  turns: _isExpanded ? 0.125 : 0,
-                  duration: const Duration(milliseconds: 300),
-                  child: Icon(
-                    _isExpanded ? Icons.close : Icons.chat_bubble_rounded,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                ),
-              ),
-            ),
+        FloatingActionButton(
+          onPressed: _toggleExpand,
+          backgroundColor: AppColors.primary2,
+          child: AnimatedRotation(
+            duration: const Duration(milliseconds: 300),
+            turns: _isExpanded ? 0.125 : 0,
+            child: const Icon(Icons.chat_bubble_rounded, color: Colors.white),
           ),
         ),
-        if (totalUnread > 0 && !_isExpanded)
+        if (totalUnread > 0)
           Positioned(
             top: -4,
             right: -4,
@@ -656,29 +404,156 @@ class _MultiChatManagerState extends State<MultiChatManager>
         alignment: Alignment.bottomRight,
         child: Container(
           constraints: const BoxConstraints(
-            maxHeight: 400,
+            maxHeight: 500,
+            maxWidth: 120,
           ),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ...widget.conversationIds.map((convId) {
-                  final isSelected = _selectedConversationId == convId;
-                  final info = _conversationInfos[convId];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _buildConversationItem(
-                      convId,
-                      isSelected,
-                      info?.unreadCount ?? 0,
-                      info?.isConnected ?? false,
+                // Section header for conversations
+                if (widget.conversationIds.isNotEmpty) ...[
+                  _buildSectionHeader(
+                    AppText.titleScope.text,
+                    Icons.chat,
+                    AppColors.primary2,
+                  ),
+                  ...widget.conversationIds.map((convId) {
+                    final isSelected = _selectedConversationId == convId;
+                    final info = _conversationInfos[convId];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _buildConversationItem(
+                        convId,
+                        isSelected,
+                        info?.unreadCount ?? 0,
+                        info?.isConnected ?? false,
+                        'conversation',
+                      ),
+                    );
+                  }).toList(),
+                  const SizedBox(height: 8),
+                ],
+
+                // Section header for projects with loading state
+                _buildSectionHeader(
+                  'Projects',
+                  Icons.folder_special,
+                  AppColors.projectColor,
+                ),
+                if (_isLoadingWorkUnits)
+                  ..._buildShimmerItems(3, 'project')
+                else if (_projects.isNotEmpty)
+                  ..._projects.map((project) {
+                    final isSelected = _selectedConversationId == project.id;
+                    final info = _conversationInfos[project.id];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _buildConversationItem(
+                        project.id,
+                        isSelected,
+                        info?.unreadCount ?? 0,
+                        info?.isConnected ?? false,
+                        'project',
+                      ),
+                    );
+                  }).toList()
+                else
+                  _buildEmptyState('Không có project'),
+
+                // Error state
+                if (_loadError != null)
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      children: [
+                        Icon(Icons.error_outline, color: Colors.red, size: 24),
+                        const SizedBox(height: 8),
+                        Text(
+                          _loadError!,
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 11,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: _loadScopesAndProjects,
+                          child: const Text('Thử lại', style: TextStyle(fontSize: 11)),
+                        ),
+                      ],
                     ),
-                  );
-                }).toList(),
+                  ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 6),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildShimmerItems(int count, String type) {
+    return List.generate(
+      count,
+          (index) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Shimmer.fromColors(
+          baseColor: Colors.grey[300]!,
+          highlightColor: Colors.grey[100]!,
+          child: Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.grey[300]!, width: 2),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(String message) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Text(
+        message,
+        style: TextStyle(
+          fontSize: 10,
+          color: Colors.grey[600],
+          fontStyle: FontStyle.italic,
+        ),
+        textAlign: TextAlign.center,
       ),
     );
   }
@@ -688,9 +563,28 @@ class _MultiChatManagerState extends State<MultiChatManager>
       bool isSelected,
       int unreadCount,
       bool isConnected,
+      String type,
       ) {
     final avatarUrl = _getConversationAvatar(conversationId);
     final name = _getConversationName(conversationId);
+
+    // Different colors for different types
+    Color borderColor = isSelected ? AppColors.primary2 : Colors.transparent;
+    Color avatarBgColor = AppColors.primary5;
+    IconData? typeIcon;
+    Color? typeIconColor;
+
+    if (type == 'scope') {
+      if (isSelected) borderColor = AppColors.scopeColor;
+      avatarBgColor = AppColors.scopeColor.withOpacity(0.2);
+      typeIcon = Icons.work_outline;
+      typeIconColor = AppColors.scopeColor;
+    } else if (type == 'project') {
+      if (isSelected) borderColor = AppColors.projectColor;
+      avatarBgColor = AppColors.projectColor.withOpacity(0.2);
+      typeIcon = Icons.folder_special;
+      typeIconColor = AppColors.projectColor;
+    }
 
     return GestureDetector(
       onTap: () => _selectConversation(conversationId),
@@ -701,13 +595,13 @@ class _MultiChatManagerState extends State<MultiChatManager>
           color: Colors.white,
           shape: BoxShape.circle,
           border: Border.all(
-            color: isSelected ? AppColors.primary2 : Colors.transparent,
+            color: borderColor,
             width: 3,
           ),
           boxShadow: [
             BoxShadow(
               color: isSelected
-                  ? AppColors.primary2.withOpacity(0.4)
+                  ? borderColor.withOpacity(0.4)
                   : Colors.black.withOpacity(0.1),
               blurRadius: isSelected ? 12 : 8,
               offset: const Offset(0, 4),
@@ -728,32 +622,42 @@ class _MultiChatManagerState extends State<MultiChatManager>
                   )
                       : CircleAvatar(
                     radius: 26,
-                    backgroundColor: AppColors.primary5,
-                    child: Text(
-                      conversationId[0].toUpperCase(),
-                      style: const TextStyle(
-                        color: AppColors.primary2,
+                    backgroundColor: avatarBgColor,
+                    child: typeIcon != null
+                        ? Icon(
+                      typeIcon,
+                      color: typeIconColor,
+                      size: 24,
+                    )
+                        : Text(
+                      _conversationInfos[conversationId]?.name[0] ?? conversationId[0].toUpperCase(),
+                      style: TextStyle(
+                        color: type == 'scope'
+                            ? AppColors.scopeColor
+                            : type == 'project'
+                            ? AppColors.projectColor
+                            : AppColors.primary2,
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
                       ),
                     ),
                   ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: isConnected ? Colors.greenAccent : Colors.grey,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.white,
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                  ),
+                  // Positioned(
+                  //   bottom: 0,
+                  //   right: 0,
+                  //   child: Container(
+                  //     width: 12,
+                  //     height: 12,
+                  //     decoration: BoxDecoration(
+                  //       color: isConnected ? Colors.greenAccent : Colors.grey,
+                  //       shape: BoxShape.circle,
+                  //       border: Border.all(
+                  //         color: Colors.white,
+                  //         width: 2,
+                  //       ),
+                  //     ),
+                  //   ),
+                  // ),
                 ],
               ),
             ),
@@ -803,8 +707,6 @@ class _MultiChatManagerState extends State<MultiChatManager>
   Widget _buildChatPopup(String conversationId) {
     print('🏗️ Building ChatPopup for: $conversationId');
 
-    // CRITICAL: Create completely new widget instance with UniqueKey
-    // This ensures Flutter creates a new State object
     return UniqueKey() != null
         ? Material(
       elevation: 20,
@@ -838,4 +740,23 @@ class _MultiChatManagerState extends State<MultiChatManager>
     )
         : const SizedBox.shrink();
   }
+}
+
+// Helper class to store conversation info
+class ConversationInfo {
+  final String id;
+  final String name;
+  final bool isConnected;
+  final int unreadCount;
+  final String type; // 'conversation', 'scope', or 'project'
+  final String? avatarUrl;
+
+  ConversationInfo({
+    required this.id,
+    required this.name,
+    required this.isConnected,
+    required this.unreadCount,
+    required this.type,
+    this.avatarUrl,
+  });
 }
