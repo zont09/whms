@@ -614,59 +614,116 @@ class _VideoCallPageState extends State<VideoCallPage> {
   Future<void> _toggleRecording() async {
     if (isRecording) {
       try {
-        js.context.callMethod('eval', [
+        // Dừng recording
+        await js.context.callMethod('eval', [
           'window.FlutterRecording.stopRecording()',
         ]);
+
+        // Đợi một chút để đảm bảo chunks được lưu
+        await Future.delayed(Duration(milliseconds: 500));
+
+        // Kiểm tra trạng thái
+        final state = js.context.callMethod('eval', [
+          'window.FlutterRecording.getRecordingState()',
+        ]);
+        print('[Recording] State after stop: $state');
+
+        // Download
         final timestamp = DateTime.now().millisecondsSinceEpoch;
         final filename = 'meeting_${widget.roomId}_$timestamp.webm';
-        js.context.callMethod('eval', [
+        final downloaded = js.context.callMethod('eval', [
           'window.FlutterRecording.downloadRecording("$filename")',
         ]);
+
         setState(() => isRecording = false);
-        if (mounted)
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Đã lưu video cuộc họp'),
-              backgroundColor: Colors.green,
-            ),
-          );
+
+        if (downloaded == true) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Đã lưu video cuộc họp'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Không có dữ liệu để lưu'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        }
       } catch (e) {
-        if (mounted)
+        print('[Recording] Error stopping: $e');
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Lỗi khi dừng ghi hình: $e'),
               backgroundColor: Colors.red,
             ),
           );
+        }
       }
     } else {
       try {
-        final stream = _localRenderer.srcObject;
-        if (stream == null) throw Exception('No local stream available');
-        final result = js.context.callMethod(
-          'eval',
-          [
-            '(function() {var stream = arguments[0]; return window.FlutterRecording.startRecording(stream);})',
-            [stream],
+        // Lấy stream ID từ local stream
+        final localStream = signaling?.localStream;
+        if (localStream == null) {
+          throw Exception('No local stream available');
+        }
 
-          ],
-        );
-        setState(() => isRecording = true);
-        if (mounted)
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Đã bắt đầu ghi hình cuộc họp'),
-              backgroundColor: Colors.green,
-            ),
-          );
+        final streamId = localStream.id;
+        print('[Recording] Starting with streamId: $streamId');
+
+        // Bắt đầu recording với streamId
+        final result = js.context.callMethod('eval', [
+          '''
+        (async function() {
+          const streamId = "$streamId";
+          const result = await window.FlutterRecording.startRecordingWithStreamId(streamId);
+          return JSON.stringify(result);
+        })()
+        '''
+        ]);
+
+        // Đợi promise resolve
+        await Future.delayed(Duration(milliseconds: 500));
+
+        // Kiểm tra kết quả
+        final stateCheck = js.context.callMethod('eval', [
+          'JSON.stringify(window.FlutterRecording.getRecordingState())',
+        ]);
+        print('[Recording] State check: $stateCheck');
+
+        final stateMap = jsonDecode(stateCheck.toString());
+
+        if (stateMap['isRecording'] == true) {
+          setState(() => isRecording = true);
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Đã bắt đầu ghi hình cuộc họp'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } else {
+          throw Exception('Failed to start recording: ${stateMap['state']}');
+        }
+
       } catch (e) {
-        if (mounted)
+        print('[Recording] Error starting: $e');
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('Lỗi khi bắt đầu ghi hình: $e'),
               backgroundColor: Colors.red,
             ),
           );
+        }
       }
     }
   }
