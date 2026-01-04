@@ -42,7 +42,7 @@ class ListUserByRoles extends StatelessWidget {
               items: cubit.listMember,
               selectedItems: cubit.selectedMembers,
               onTap: () {
-                cubit.updateMembers();
+                cubit.updateMembers(context);
               },
               task: cubit.wu,
               isHandlerEdit: isHandlerEdit,
@@ -122,7 +122,7 @@ class ListUserByRoles extends StatelessWidget {
                           );
                           return;
                         }
-                        cubit.updateMembers();
+                        cubit.updateMembers(context);
                       },
                       hintWidget: Container(
                         decoration: BoxDecoration(

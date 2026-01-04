@@ -9,6 +9,7 @@ import 'package:whms/untils/app_text.dart';
 import 'package:whms/untils/scale_utils.dart';
 import 'package:whms/widgets/app_bar/tab_button_view.dart';
 import 'package:whms/widgets/custom_button.dart';
+import 'package:whms/widgets/notification_icon_widget.dart';
 
 class NewAppBar extends StatelessWidget {
   const NewAppBar({super.key, required this.isHome, required this.tab});
@@ -67,27 +68,26 @@ class NewAppBar extends StatelessWidget {
                               height: ScaleUtils.scaleSize(36, context),
                               child: ZButton(
                                 title:
-                                    checkIn == StatusCheckInDefine.notCheckIn ||
-                                        checkIn == StatusCheckInDefine.checkOut
+                                checkIn == StatusCheckInDefine.notCheckIn ||
+                                    checkIn == StatusCheckInDefine.checkOut
                                     ? AppText.titleCheckIn.text
                                     : (checkIn == StatusCheckInDefine.breakTime
-                                          ? AppText.titleResume.text
-                                          : AppText.titleCheckOut.text),
-                                // icon: 'assets/images/icons/ic_check_in.png',
+                                    ? AppText.titleResume.text
+                                    : AppText.titleCheckOut.text),
                                 colorBackground:
-                                    checkIn == StatusCheckInDefine.checkOut
+                                checkIn == StatusCheckInDefine.checkOut
                                     ? ColorConfig.border4
                                     : Colors.white,
                                 colorBorder:
-                                    checkIn == StatusCheckInDefine.checkOut
+                                checkIn == StatusCheckInDefine.checkOut
                                     ? ColorConfig.border4
                                     : Colors.white,
                                 colorTitle:
-                                    checkIn == StatusCheckInDefine.checkOut
+                                checkIn == StatusCheckInDefine.checkOut
                                     ? Colors.white
                                     : ColorConfig.primary1,
                                 colorIcon:
-                                    checkIn == StatusCheckInDefine.checkOut
+                                checkIn == StatusCheckInDefine.checkOut
                                     ? Colors.white
                                     : ColorConfig.primary1,
                                 sizeTitle: 14,
@@ -97,23 +97,22 @@ class NewAppBar extends StatelessWidget {
                                 paddingHor: 20,
                                 isShadow: true,
                                 onPressed: () async {
-                                  // await configsCubit.getConfiguration();
                                   if (context.mounted) {
                                     CheckInDialog.showCheckInDialog(context);
                                   }
-                                  // configsCubit.getDataWorkingUnitNewest();
-                                  // showAddTaskDialog(context);
-                                  // showTaskDialog(context);
                                 },
                               ),
                             );
                           },
                         ),
                         SizedBox(width: ScaleUtils.scaleSize(18, context)),
+
+                        // ===== THÊM NOTIFICATION ICON =====
+                        const NotificationIconWidget(),
+                        SizedBox(width: ScaleUtils.scaleSize(18, context)),
+
                         const UserProfileWidget(),
                         SizedBox(width: ScaleUtils.scaleSize(40, context)),
-                        // const AppbarNotification(),
-                        // SizedBox(width: ScaleUtils.scaleSize(20, context)),
                       ],
                     ),
                   ],

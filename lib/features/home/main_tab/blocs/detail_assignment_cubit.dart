@@ -18,10 +18,11 @@ import 'package:whms/untils/cache_utils.dart';
 import 'package:whms/untils/convert_utils.dart';
 import 'package:whms/untils/date_time_utils.dart';
 import 'package:whms/untils/dialog_utils.dart';
+import 'package:whms/untils/task_noti_helper.dart';
 
 class DetailAssignCubit extends Cubit<int> {
   DetailAssignCubit(WorkingUnitModel model, UserModel u, ConfigsCubit cubit)
-      : super(0) {
+    : super(0) {
     wu = model;
     user = u;
     cfC = cubit;
@@ -53,8 +54,10 @@ class DetailAssignCubit extends Cubit<int> {
   PlatformFile? avtWork;
   String? avtTask;
 
-  init(List<ScopeModel> allScopes,
-      Map<String, List<WorkingUnitModel>> mapChild) async {
+  init(
+    List<ScopeModel> allScopes,
+    Map<String, List<WorkingUnitModel>> mapChild,
+  ) async {
     listMember.clear();
     updateKey(wu);
     selectedMembers.clear();
@@ -107,7 +110,7 @@ class DetailAssignCubit extends Cubit<int> {
       avtWork = await CacheUtils.instance.getFileGB(wu.icon);
     }
 
-      debugPrint("====> Debug 3");
+    debugPrint("====> Debug 3");
 
     if (wu.type == TypeAssignmentDefine.task.title) {
       if (wu.icon.isEmpty) {
@@ -125,20 +128,24 @@ class DetailAssignCubit extends Cubit<int> {
       tmp = mapWorkChild[wu.parent]!;
     } else {
       tmp = await _workingService.getWorkingUnitByIdParent(wu.parent);
-      for(var e in tmp) {
+      for (var e in tmp) {
         cfC.addWorkingUnit(e, isLocal: true);
       }
     }
     if (tmp.isNotEmpty) {
       directParent = tmp.first;
     }
-    debugPrint("====> init detail assignment view thanh cong: $ownerScope ${wu.owner}");
+    debugPrint(
+      "====> init detail assignment view thanh cong: $ownerScope ${wu.owner}",
+    );
     buildUI();
   }
 
   updateDeadline(DateTime deadline) async {
     cfC.updateWorkingUnit(
-        wu.copyWith(deadline: DateTimeUtils.getTimestampWithDay(deadline)), wu);
+      wu.copyWith(deadline: DateTimeUtils.getTimestampWithDay(deadline)),
+      wu,
+    );
     // await _workingService.updateWorkingUnitField(
     //     wu.copyWith(deadline: DateTimeUtils.getTimestampWithDay(deadline)),
     //     wu,
@@ -162,9 +169,11 @@ class DetailAssignCubit extends Cubit<int> {
 
   updateUrgent(DateTime urgent, context) async {
     var start = DateTimeUtils.convertToDateTime(
-        DateTimeUtils.convertTimestampToDateString(wu.start));
+      DateTimeUtils.convertTimestampToDateString(wu.start),
+    );
     var end = DateTimeUtils.convertToDateTime(
-        DateTimeUtils.convertTimestampToDateString(wu.deadline));
+      DateTimeUtils.convertTimestampToDateString(wu.deadline),
+    );
     if ((urgent.isBefore(end) ||
         urgent.isAtSameMomentAs(end) &&
             (start.isBefore(urgent) || start.isAtSameMomentAs(urgent)))) {
@@ -173,18 +182,24 @@ class DetailAssignCubit extends Cubit<int> {
       //     wu,
       //     user.id);
       cfC.updateWorkingUnit(
-          wu.copyWith(urgent: DateTimeUtils.getTimestampWithDay(urgent)), wu);
+        wu.copyWith(urgent: DateTimeUtils.getTimestampWithDay(urgent)),
+        wu,
+      );
       wu.urgent = DateTimeUtils.getTimestampWithDay(urgent);
     } else {
-      DialogUtils.showResultDialog(context, AppText.titleErrorNotification.text,
-          AppText.txtInvalidUrgentDate.text,
-          mainColor: ColorConfig.primary3);
+      DialogUtils.showResultDialog(
+        context,
+        AppText.titleErrorNotification.text,
+        AppText.txtInvalidUrgentDate.text,
+        mainColor: ColorConfig.primary3,
+      );
     }
   }
 
   updateViewer() async {
-    List<String> viewers =
-        ConvertUtils.convertUserModelToString(selectedFollowers);
+    List<String> viewers = ConvertUtils.convertUserModelToString(
+      selectedFollowers,
+    );
     cfC.updateWorkingUnit(wu.copyWith(followers: viewers), wu);
     // await _workingService.updateWorkingUnitField(
     //     wu.copyWith(followers: viewers), wu, user.id);
@@ -206,21 +221,36 @@ class DetailAssignCubit extends Cubit<int> {
     wu.priority = title;
   }
 
-  updateMembers() async {
-    List<String> members =
-        ConvertUtils.convertUserModelToString(selectedMembers);
-
+  updateMembers(BuildContext context) async {
+    List<String> members = ConvertUtils.convertUserModelToString(
+      selectedMembers,
+    );
+    TaskAssignmentHelper helper = TaskAssignmentHelper();
+    // final uri =
+    //     Router.of(context).routeInformationProvider?.value.uri;
+    // String path = '';
+    // if (uri?.path.contains('manager') ?? false) {
+    //   path = 'home/mainTab/204';
+    // } else {
+    //   path = 'home/manager/${wu.id}';
+    // }
+    // helper.assignUsersToTask(
+    //   task: wu,
+    //   newAssigneeIds: members,
+    //   ownerId: cfC.user.id,
+    //   context: context, path: path,
+    // );
     cfC.updateWorkingUnit(wu.copyWith(assignees: members), wu);
     // await _workingService.updateWorkingUnitField(
     //     wu.copyWith(assignees: members), wu, user.id);
     if (wu.type == TypeAssignmentDefine.task.title) {
       List<WorkingUnitModel> listChild = [];
-      if(mapWorkChild.containsKey(wu.id)) {
+      if (mapWorkChild.containsKey(wu.id)) {
         listChild = [...mapWorkChild[wu.id]!];
       } else {
         final data = await _workingService.getWorkingUnitByIdParent(wu.id);
         listChild = [...data];
-        for(var e in data) {
+        for (var e in data) {
           cfC.addWorkingUnit(e);
         }
       }
@@ -235,8 +265,9 @@ class DetailAssignCubit extends Cubit<int> {
   }
 
   updateHandlers() async {
-    List<String> members =
-        ConvertUtils.convertUserModelToString(selectedHandlers);
+    List<String> members = ConvertUtils.convertUserModelToString(
+      selectedHandlers,
+    );
 
     updateHandlerForChild(wu, members);
 
@@ -325,12 +356,12 @@ class DetailAssignCubit extends Cubit<int> {
     // await _workingService.updateWorkingUnitField(
     //     work.copyWith(enable: false), work, user.id);
     List<WorkingUnitModel> listWorkChild = [];
-    if(mapWorkChild.containsKey(work.id)) {
+    if (mapWorkChild.containsKey(work.id)) {
       listWorkChild = [...mapWorkChild[work.id]!];
     } else {
-      final data =  await _workingService.getWorkingUnitByIdParent(work.id);
+      final data = await _workingService.getWorkingUnitByIdParent(work.id);
       listWorkChild = [...data];
-      for(var e in data) {
+      for (var e in data) {
         cfC.addWorkingUnit(e);
       }
     }
@@ -344,8 +375,9 @@ class DetailAssignCubit extends Cubit<int> {
     loadingComment++;
     listComments.clear();
     buildUI();
-    final comments = await _commentService
-        .getCommentByPosition("${CommentTypeDefine.workingUnit.title}_$idWork");
+    final comments = await _commentService.getCommentByPosition(
+      "${CommentTypeDefine.workingUnit.title}_$idWork",
+    );
     comments.sort((a, b) => b.date.compareTo(a.date));
     listComments.addAll(comments);
     loadingComment--;

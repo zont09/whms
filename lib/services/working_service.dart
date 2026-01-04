@@ -1,9 +1,13 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:whms/defines/status_check_in_define.dart';
+import 'package:whms/defines/type_assignment_define.dart';
+import 'package:whms/main.dart';
 import 'package:whms/models/response_model.dart';
 import 'package:whms/models/work_field_model.dart';
 import 'package:whms/models/working_unit_model.dart';
 import 'package:whms/repositories/working_repository.dart';
+import 'package:whms/services/notification_service.dart';
 
 class WorkingService {
   WorkingService._privateConstructor();
@@ -71,7 +75,9 @@ class WorkingService {
   // }
 
   Future<List<WorkingUnitModel>> getWorkingUnitClosedForUserUpdated(
-      DateTime date, String idU) async {
+    DateTime date,
+    String idU,
+  ) async {
     final response = await WorkingRepository.instance
         .getWorkingUnitClosedForUserUpdated(date, idU);
     if (response.status == ResponseStatus.ok && response.results != null) {
@@ -81,7 +87,8 @@ class WorkingService {
   }
 
   Future<ResponseModel<List<WorkingUnitModel>>> getProjectsForUser(
-      String userId) async {
+    String userId,
+  ) async {
     return await WorkingRepository.instance.getProjectsForUser(userId);
   }
 
@@ -95,7 +102,9 @@ class WorkingService {
   }
 
   Future<List<WorkingUnitModel>> getWorkingUnitForUserUpdated(
-      DateTime date, String idU) async {
+    DateTime date,
+    String idU,
+  ) async {
     final response = await WorkingRepository.instance
         .getWorkingUnitForUserUpdated(date, idU);
     if (response.status == ResponseStatus.ok && response.results != null) {
@@ -115,8 +124,11 @@ class WorkingService {
   // }
 
   Future<List<WorkingUnitModel>>
-      getAllWorkingUnitInScopeByTypeIgnoreClosedUpdate(
-          DateTime date, String idU, String type) async {
+  getAllWorkingUnitInScopeByTypeIgnoreClosedUpdate(
+    DateTime date,
+    String idU,
+    String type,
+  ) async {
     final response = await WorkingRepository.instance
         .getAllWorkingUnitInScopeByTypeIgnoreClosedUpdated(date, idU, type);
     if (response.status == ResponseStatus.ok && response.results != null) {
@@ -144,10 +156,9 @@ class WorkingService {
   // }
 
   Future<WorkingUnitModel?> getWorkingUnitById(String id) async {
-    final result = (await WorkingRepository.instance.getWorkingUnitById(id))
-        .docs
-        .map((e) => WorkingUnitModel.fromSnapshot(e))
-        .firstOrNull;
+    final result = (await WorkingRepository.instance.getWorkingUnitById(
+      id,
+    )).docs.map((e) => WorkingUnitModel.fromSnapshot(e)).firstOrNull;
     return result;
   }
 
@@ -170,12 +181,13 @@ class WorkingService {
   // }
 
   Future<List<WorkingUnitModel>> getWorkingUnitAsOkrs(
-      String okrsGroup, String type) async {
-    final result =
-        (await WorkingRepository.instance.getWorkingUnitAsOkrs(okrsGroup, type))
-            .docs
-            .map((e) => WorkingUnitModel.fromSnapshot(e))
-            .toList();
+    String okrsGroup,
+    String type,
+  ) async {
+    final result = (await WorkingRepository.instance.getWorkingUnitAsOkrs(
+      okrsGroup,
+      type,
+    )).docs.map((e) => WorkingUnitModel.fromSnapshot(e)).toList();
     return result;
   }
 
@@ -190,10 +202,9 @@ class WorkingService {
 
   Future<WorkingUnitModel?> getWorkingUnitByIdIgnoreClosed(String id) async {
     final result =
-        (await WorkingRepository.instance.getWorkingUnitByIdIgnoreClosed(id))
-            .docs
-            .map((e) => WorkingUnitModel.fromSnapshot(e))
-            .firstOrNull;
+        (await WorkingRepository.instance.getWorkingUnitByIdIgnoreClosed(
+          id,
+        )).docs.map((e) => WorkingUnitModel.fromSnapshot(e)).firstOrNull;
     return result;
   }
 
@@ -218,8 +229,10 @@ class WorkingService {
   // }
 
   Future<List<WorkingUnitModel>> getWorkingUnitByScopeIdUpdated(
-      DateTime date, String id,
-      {bool isAll = false}) async {
+    DateTime date,
+    String id, {
+    bool isAll = false,
+  }) async {
     final response = await WorkingRepository.instance
         .getWorkingUnitByScopeIdUpdated(date, id, isAll: isAll);
     if (response.status == ResponseStatus.ok && response.results != null) {
@@ -265,25 +278,26 @@ class WorkingService {
   // }
 
   Future<List<WorkingUnitModel>> getWorkingUnitByIdParent(String id) async {
-    final result = (await WorkingRepository.instance.getWorkingUnitByParent(id))
-        .docs
-        .map((e) => WorkingUnitModel.fromSnapshot(e))
-        .toList();
+    final result = (await WorkingRepository.instance.getWorkingUnitByParent(
+      id,
+    )).docs.map((e) => WorkingUnitModel.fromSnapshot(e)).toList();
     return result;
   }
 
   Future<List<WorkingUnitModel>> getWorkingUnitByIdParentIgnoreClosed(
-      String id) async {
-    final result = (await WorkingRepository.instance
-            .getWorkingUnitByParentIgnoreClosed(id))
-        .docs
-        .map((e) => WorkingUnitModel.fromSnapshot(e))
-        .toList();
+    String id,
+  ) async {
+    final result =
+        (await WorkingRepository.instance.getWorkingUnitByParentIgnoreClosed(
+          id,
+        )).docs.map((e) => WorkingUnitModel.fromSnapshot(e)).toList();
     return result;
   }
 
   Future<List<WorkingUnitModel>> getWorkingUnitByIdParentIgnoreClosedUpdated(
-      DateTime date, String id) async {
+    DateTime date,
+    String id,
+  ) async {
     final response = await WorkingRepository.instance
         .getWorkingUnitByParentIgnoreClosedUpdated(date, id);
     if (response.status == ResponseStatus.ok && response.results != null) {
@@ -302,12 +316,76 @@ class WorkingService {
   // }
 
   Future<void> updateWorkingUnitField(
-      WorkingUnitModel model, WorkingUnitModel oldModel, String idU,
-      {bool isGetUpdateTime = true, bool isUpdateAnnounces = false}) async {
+    WorkingUnitModel model,
+    WorkingUnitModel oldModel,
+    String idU, {
+    bool isGetUpdateTime = true,
+    bool isUpdateAnnounces = false,
+    StatusCheckInDefine? checkInStatus,
+  }) async {
+    // Lưu vào database trước
     await WorkingRepository.instance.updateWorkingUnitField(
-        model, oldModel, idU,
-        isGetUpdateTime: isGetUpdateTime, isUpdateAnnounces: isUpdateAnnounces);
+      model,
+      oldModel,
+      idU,
+      isGetUpdateTime: isGetUpdateTime,
+      isUpdateAnnounces: isUpdateAnnounces,
+    );
+
     debugPrint("=========> Update working unit: ${model.id} ${model.title}");
+
+    // ===== XỬ LÝ THÔNG BÁO =====
+    if(model.type != TypeAssignmentDefine.task.title) return;
+    final uri = mainRouter.routeInformationProvider.value.uri;
+    String path = '';
+    if (uri.path.contains('manager') ?? false) {
+      path = 'home/mainTab/204';
+    } else {
+      path = 'home/manager/${model.id}';
+    }
+
+    // 1. Kiểm tra thay đổi status (chỉ khi check-out)
+    if (model.status != oldModel.status && checkInStatus != null) {
+      await NotificationService.instance.notifyTaskStatusUpdate(
+        task: model,
+        updaterId: idU,
+        oldStatus: oldModel.status,
+        newStatus: model.status,
+        checkInStatus: checkInStatus,
+        path: path,
+      );
+    }
+
+    // 2. Kiểm tra thay đổi assignees (gắn/gỡ người)
+    if (model.assignees != oldModel.assignees) {
+      // Tìm người được gắn mới
+      final newAssignees = model.assignees
+          .where((id) => !oldModel.assignees.contains(id))
+          .toList();
+
+      if (newAssignees.isNotEmpty) {
+        await NotificationService.instance.notifyTaskAssigned(
+          task: model,
+          ownerId: idU,
+          newAssignees: newAssignees,
+          path: path,
+        );
+      }
+
+      // Tìm người bị gỡ
+      final removedAssignees = oldModel.assignees
+          .where((id) => !model.assignees.contains(id))
+          .toList();
+
+      if (removedAssignees.isNotEmpty) {
+        await NotificationService.instance.notifyTaskUnassigned(
+          task: model,
+          ownerId: idU,
+          removedAssignees: removedAssignees,
+          path: path,
+        );
+      }
+    }
   }
 
   Future<String?> uploadFile(PlatformFile file, String wuId) async {
@@ -340,41 +418,46 @@ class WorkingService {
   // }
 
   Future<List<WorkFieldModel>> getWorkFieldByIdWorkShift(String id) async {
-    final result =
-        (await WorkingRepository.instance.getWorkFieldByWorkShift(id))
-            .docs
-            .map((e) => WorkFieldModel.fromSnapshot(e))
-            .toList();
+    final result = (await WorkingRepository.instance.getWorkFieldByWorkShift(
+      id,
+    )).docs.map((e) => WorkFieldModel.fromSnapshot(e)).toList();
     return result;
   }
 
   Future<List<WorkFieldModel>> getWorkFieldByIdWorkShiftUpdated(
-      DateTime date, String id) async {
-    final result = (await WorkingRepository.instance
-            .getWorkFieldByWorkShiftUpdated(id, date))
-        .docs
-        .map((e) => WorkFieldModel.fromSnapshot(e))
-        .toList();
+    DateTime date,
+    String id,
+  ) async {
+    final result =
+        (await WorkingRepository.instance.getWorkFieldByWorkShiftUpdated(
+          id,
+          date,
+        )).docs.map((e) => WorkFieldModel.fromSnapshot(e)).toList();
     return result;
   }
 
   Future<WorkFieldModel?> getWorkFieldByWorkShiftAndIdWork(
-      String idWS, String idWU) async {
-    final result = (await WorkingRepository.instance
-            .getWorkFieldByWorkShiftAndIdQuest(idWS, idWU))
-        .docs
-        .map((e) => WorkFieldModel.fromSnapshot(e))
-        .firstOrNull;
+    String idWS,
+    String idWU,
+  ) async {
+    final result =
+        (await WorkingRepository.instance.getWorkFieldByWorkShiftAndIdQuest(
+          idWS,
+          idWU,
+        )).docs.map((e) => WorkFieldModel.fromSnapshot(e)).firstOrNull;
     return result;
   }
 
   Future<WorkFieldModel?> getWorkFieldByWorkShiftAndIdWorkIgnoreEnable(
-      String idWS, String idWU) async {
-    final result = (await WorkingRepository.instance
-            .getWorkFieldByWorkShiftAndIdQuestIgnoreEnable(idWS, idWU))
-        .docs
-        .map((e) => WorkFieldModel.fromSnapshot(e))
-        .firstOrNull;
+    String idWS,
+    String idWU,
+  ) async {
+    final result =
+        (await WorkingRepository.instance
+                .getWorkFieldByWorkShiftAndIdQuestIgnoreEnable(idWS, idWU))
+            .docs
+            .map((e) => WorkFieldModel.fromSnapshot(e))
+            .firstOrNull;
     return result;
   }
 
@@ -396,7 +479,9 @@ class WorkingService {
   // }
 
   Future<void> updateWorkFieldWithField(
-      WorkFieldModel model, WorkFieldModel preModel) async {
+    WorkFieldModel model,
+    WorkFieldModel preModel,
+  ) async {
     await WorkingRepository.instance.updateWorkFieldWithField(model, preModel);
     debugPrint("=========> Update work field: ${model.id} ${model.workShift}");
   }

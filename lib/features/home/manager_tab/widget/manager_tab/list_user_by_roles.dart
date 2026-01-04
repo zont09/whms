@@ -32,7 +32,7 @@ class ListUserByRoles extends StatelessWidget {
               items: cubit.listMember,
               selectedItems: cubit.selectedMembers,
               onTap: () {
-                cubit.updateMembers();
+                cubit.updateMembers(context);
               }),
         ),
       if (cubit.wu.workingPoint <= 0 &&
@@ -89,7 +89,7 @@ class ListUserByRoles extends StatelessWidget {
                                 AppText.textSelectWorkingBeforeAssign.text);
                             return;
                           }
-                          cubit.updateMembers();
+                          cubit.updateMembers(context);
                         },
                         hintWidget: Container(
                             decoration: BoxDecoration(
