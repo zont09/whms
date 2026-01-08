@@ -35,7 +35,7 @@ class CheckInView extends StatelessWidget {
               child: Builder(builder: (cc) {
                 return Container(
                   height: MediaQuery.of(context).size.height - 50,
-                  width: ScaleUtils.scaleSize(900, context),
+                  width: ScaleUtils.scaleSize(1000, context),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(

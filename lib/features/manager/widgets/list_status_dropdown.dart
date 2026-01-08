@@ -25,7 +25,7 @@ class ListStatusDropdown extends StatefulWidget {
       required this.selector,
       this.size = 10,
       this.height = 30,
-      this.paddingHor = 12,
+      this.paddingHor = 6,
       this.paddingVer = 5,
       this.iconSize = 24,
       this.maxWidth = 120,

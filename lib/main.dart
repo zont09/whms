@@ -51,7 +51,12 @@ void main() async {
   runApp(MyApp());
 }
 
-late final GoRouter mainRouter;
+final GoRouter mainRouter = GoRouter(
+  routes: SetupGoRouter.createRoutes(),
+  errorBuilder: (context, state) {
+    return const PageNotFoundScreen();
+  },
+);
 
 class MyApp extends StatelessWidget {
 
@@ -60,13 +65,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    mainRouter = GoRouter(
-      // initialLocation: AppRoutes.login,
-      routes: SetupGoRouter.createRoutes(),
-      errorBuilder: (context, state) {
-        return const PageNotFoundScreen();
-      },
-    );
+    // mainRouter = GoRouter(
+    //   // initialLocation: AppRoutes.login,
+    //   routes: SetupGoRouter.createRoutes(),
+    //   errorBuilder: (context, state) {
+    //     return const PageNotFoundScreen();
+    //   },
+    // );
     return MultiBlocProvider(
         providers: [
           BlocProvider(create: (context) => ConfigsCubit()..init()),

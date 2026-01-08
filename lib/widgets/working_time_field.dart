@@ -92,7 +92,7 @@ class _WorkingTimeFieldState extends State<WorkingTimeField> {
                       });
                       widget.onChange(hours * 60 + minutes);
                     },
-                    maxWidth: 45,
+                    maxWidth: 55,
                     maxHeight: 18,
                     itemHeight: 24,
                     fontSize: 14,
@@ -132,7 +132,7 @@ class WorkingTimeItem extends StatelessWidget {
         color: ColorConfig.timePrimary,
       ),
       padding: EdgeInsets.symmetric(
-          horizontal: ScaleUtils.scaleSize(3, context),
+          horizontal: ScaleUtils.scaleSize(1, context),
           vertical: ScaleUtils.scaleSize(2, context)),
       margin: EdgeInsets.symmetric(
           vertical: isSelected ? 0 : ScaleUtils.scaleSize(3, context)),

@@ -54,7 +54,7 @@ class CheckOutView extends StatelessWidget {
                           height: cubit.tab != 1 && checkIn != StatusCheckInDefine.breakTime
                               ? MediaQuery.of(context).size.height - 50
                               : null,
-                          width: ScaleUtils.scaleSize(950, context),
+                          width: ScaleUtils.scaleSize(1000, context),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(
