@@ -5,6 +5,7 @@ import 'package:whms/features/home/main_tab/blocs/detail_assignment_cubit.dart';
 import 'package:whms/features/home/main_tab/views/task/detail_task_view/attachment_files_view.dart';
 import 'package:whms/features/home/main_tab/views/task/detail_task_view/detail_assign_more.dart';
 import 'package:whms/features/home/main_tab/views/task/detail_task_view/detail_assignment_setting.dart';
+import 'package:whms/features/home/main_tab/views/task/detail_task_view/product_handover_view.dart';
 import 'package:whms/features/home/main_tab/views/task/list_scope_in_detail.dart';
 import 'package:whms/features/home/main_tab/views/task/detail_task_view/title_view.dart';
 import 'package:whms/features/home/main_tab/widgets/task/list_user_by_roles.dart';
@@ -299,6 +300,13 @@ class DetailAssignmentView extends StatelessWidget {
                           }),
                         if (cubit.wu.type == TypeAssignmentDefine.task.title)
                           const ZSpace(h: 9),
+                        // SizedBox(height: ScaleUtils.scaleSize(20, context)),
+                        if(cubit.wu.type == TypeAssignmentDefine.task.title)
+                        ProductHandoverView(
+                          work: cubit.wu,
+                          onUpdate: onUpdate ?? (v, o) {},
+                        ),
+                        SizedBox(height: ScaleUtils.scaleSize(20, context)),
                         // if (cubit.wu.type == TypeAssignmentDefine.task.title)
                         //   CommentTaskView(
                         //       work: cubit.wu,
@@ -321,7 +329,8 @@ class DetailAssignmentView extends StatelessWidget {
                       onRemoveToday: onRemoveToday ?? (v) {},
                       onDoing: onDoing ?? (v) {},
                       onUpdate: onUpdate ?? (v, o) {},
-                      userId: configs.user.id)
+                      userId: configs.user.id),
+
                 ]));
           }),
     );

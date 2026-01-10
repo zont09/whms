@@ -99,29 +99,31 @@ class ListAttachmentsView extends StatelessWidget {
                         onAddFile(v);
                       }));
                     },
-                    child: Container(
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(229),
-                            boxShadow: [
-                              BoxShadow(
-                                  blurRadius: 3,
-                                  offset: const Offset(0, 0),
-                                  color: Colors.black.withOpacity(0.2))
-                            ],
-                            color: Colors.white),
-                        padding: EdgeInsets.symmetric(
-                            horizontal: ScaleUtils.scaleSize(8, context),
-                            vertical: ScaleUtils.scaleSize(4, context)),
-                        child: Row(children: [
-                          Image.asset('assets/images/icons/ic_upload_2.png',
-                              height: ScaleUtils.scaleSize(16, context), color: ColorConfig.primary2,),
-                          const ZSpace(w: 4),
-                          Text(AppText.titleAddFileAttachment.text,
-                              style: TextStyle(
-                                  fontSize: ScaleUtils.scaleSize(12, context),
-                                  fontWeight: FontWeight.w500,
-                                  color: ColorConfig.primary3))
-                        ])))
+                    child: IntrinsicWidth(
+                      child: Container(
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(229),
+                              boxShadow: [
+                                BoxShadow(
+                                    blurRadius: 3,
+                                    offset: const Offset(0, 0),
+                                    color: Colors.black.withOpacity(0.2))
+                              ],
+                              color: Colors.white),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: ScaleUtils.scaleSize(8, context),
+                              vertical: ScaleUtils.scaleSize(4, context)),
+                          child: Row(children: [
+                            Image.asset('assets/images/icons/ic_upload_2.png',
+                                height: ScaleUtils.scaleSize(16, context), color: ColorConfig.primary2,),
+                            const ZSpace(w: 4),
+                            Text(AppText.titleAddFileAttachment.text,
+                                style: TextStyle(
+                                    fontSize: ScaleUtils.scaleSize(12, context),
+                                    fontWeight: FontWeight.w500,
+                                    color: ColorConfig.primary3))
+                          ])),
+                    ))
               ]))
         ]));
   }

@@ -106,7 +106,7 @@ class ListUserView extends StatelessWidget {
                         onChanged: (v) {
                           cubitData.onChangeDepartment(v!);
                         },
-                        maxWidth: 120,
+                        maxWidth: 140,
                         maxHeight: 32,
                         radius: 8,
                         initItem: cubitData.filterDepartment,

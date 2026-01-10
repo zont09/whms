@@ -20,7 +20,7 @@ class ListSectionView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final List<int> weight = [3, 7, 7, 3, 3];
+    final List<int> weight = [3, 7, 7, 4, 3];
     return Column(
       children: [
         const ZSpace(h: 12),
@@ -29,7 +29,7 @@ class ListSectionView extends StatelessWidget {
         ...listSections.map((e) => Column(
               children: [
                 CardMeetingSectionWidget(
-                  key: ValueKey("key_meeting_section_${e.id}"),
+                  key: ValueKey("key_meeting_section_${e.id}_${e.attachments.length}"),
                   section: e,
                   weight: weight,
                   isEdit: true,

@@ -42,6 +42,10 @@ class WorkingUnitModel {
   Timestamp createAt;
   Timestamp lastWorkedAt;
 
+  // New fields for product handover
+  String? handoverDescription;
+  List<String> handoverFiles;
+
   List<WorkingUnitModel> children = [];
   WorkingUnitModel? family;
   int level = 0;
@@ -85,6 +89,8 @@ class WorkingUnitModel {
     this.closed = false,
     Timestamp? createAt,
     Timestamp? lastWorkedAt,
+    this.handoverDescription,
+    this.handoverFiles = const [],
   })  : start = start ?? Timestamp.now(),
         deadline = deadline ?? Timestamp.now(),
         urgent = urgent ?? Timestamp.now(),
@@ -174,8 +180,8 @@ class WorkingUnitModel {
         .replaceAll('/', '.');
     String tmp2 = tmp1.split('.').sublist(0, 2).join('.');
     if (DateTimeUtils.convertToDateTime(
-                DateTimeUtils.convertTimestampToDateString(deadline))
-            .year ==
+        DateTimeUtils.convertTimestampToDateString(deadline))
+        .year ==
         DateTime.now().year) {
       return tmp2;
     } else {
@@ -247,8 +253,7 @@ class WorkingUnitModel {
         attachments: json['attachments'] != null
             ? List<String>.from(json['attachments'])
             : [],
-        status:
-            json['status'] != null ? int.parse(json['status'].toString()) : 0,
+        status: json['status'] != null ? int.parse(json['status'].toString()) : 0,
         assignees: json['assignees'] != null
             ? List<String>.from(json['assignees'])
             : [],
@@ -259,7 +264,7 @@ class WorkingUnitModel {
             ? List<String>.from(json['followers'])
             : [],
         handlers:
-            json['handlers'] != null ? List<String>.from(json['handlers']) : [],
+        json['handlers'] != null ? List<String>.from(json['handlers']) : [],
         scopes: json['scope'] != null ? List<String>.from(json['scope']) : [],
         okrs: json['okr'] != null ? List<String>.from(json['okr']) : [],
         owner: json['owner'] ?? "",
@@ -279,7 +284,7 @@ class WorkingUnitModel {
             ? List<String>.from(json['results_int_okrs'])
             : [],
         sharings:
-            json['sharings'] != null ? List<String>.from(json['sharings']) : [],
+        json['sharings'] != null ? List<String>.from(json['sharings']) : [],
         announces: json['announces'] != null
             ? List<String>.from(json['announces'])
             : [],
@@ -304,6 +309,10 @@ class WorkingUnitModel {
         lastWorkedAt: json['lastWorkedAt'] != null
             ? (json['lastWorkedAt'] as Timestamp)
             : Timestamp.now(),
+        handoverDescription: json['handover_description'],
+        handoverFiles: json['handover_files'] != null
+            ? List<String>.from(json['handover_files'])
+            : [],
       );
 
   // Factory method to create a WorkingUnitModel from Firestore snapshot
@@ -348,6 +357,8 @@ class WorkingUnitModel {
     bool? closed,
     Timestamp? createAt,
     Timestamp? lastWorkedAt,
+    String? handoverDescription,
+    List<String>? handoverFiles,
   }) {
     return WorkingUnitModel(
         id: id ?? this.id,
@@ -382,45 +393,49 @@ class WorkingUnitModel {
         enable: enable ?? this.enable,
         closed: closed ?? this.closed,
         createAt: createAt ?? this.createAt,
-        lastWorkedAt: lastWorkedAt ?? this.lastWorkedAt);
+        lastWorkedAt: lastWorkedAt ?? this.lastWorkedAt,
+        handoverDescription: handoverDescription ?? this.handoverDescription,
+        handoverFiles: handoverFiles ?? this.handoverFiles);
   }
 
   // Convert WorkingUnitModel to JSON
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'type': type,
-        'parent': parent,
-        'title': title,
-        'description': description,
-        'priority': priority,
-        'start': start,
-        'deadline': deadline,
-        'attachments': attachments,
-        'status': status,
-        'assignees': assignees,
-        'followers': followers,
-        'handlers': handlers,
-        'assignees_pending': assigneesPending,
-        'scope': scopes,
-        'okr': okrs,
-        'owner': owner,
-        'urgent': urgent,
-        'working_point': workingPoint,
-        'documents': documents,
-        'objects_in_okrs': objectsInOkrs,
-        'results_int_okrs': resultsInOkrs,
-        'sharings': sharings,
-        'announces': announces,
-        'periodic': periodic,
-        'periodic_value': periodicValue,
-        'duration': duration,
-        'enable': enable,
-        'result': result,
-        'icon': icon,
-        'closed': closed,
-        'createAt': createAt,
-        'lastWorkedAt': lastWorkedAt
-      };
+    'id': id,
+    'type': type,
+    'parent': parent,
+    'title': title,
+    'description': description,
+    'priority': priority,
+    'start': start,
+    'deadline': deadline,
+    'attachments': attachments,
+    'status': status,
+    'assignees': assignees,
+    'followers': followers,
+    'handlers': handlers,
+    'assignees_pending': assigneesPending,
+    'scope': scopes,
+    'okr': okrs,
+    'owner': owner,
+    'urgent': urgent,
+    'working_point': workingPoint,
+    'documents': documents,
+    'objects_in_okrs': objectsInOkrs,
+    'results_int_okrs': resultsInOkrs,
+    'sharings': sharings,
+    'announces': announces,
+    'periodic': periodic,
+    'periodic_value': periodicValue,
+    'duration': duration,
+    'enable': enable,
+    'result': result,
+    'icon': icon,
+    'closed': closed,
+    'createAt': createAt,
+    'lastWorkedAt': lastWorkedAt,
+    'handover_description': handoverDescription,
+    'handover_files': handoverFiles,
+  };
 
   static Map<String, dynamic> getDifferentFields(
       WorkingUnitModel obj1, WorkingUnitModel obj2) {
@@ -475,6 +490,10 @@ class WorkingUnitModel {
     if (obj1.isOpen != obj2.isOpen) differences['isOpen'] = obj2.isOpen;
     if (obj1.createAt != obj2.createAt) differences['createAt'] = obj2.createAt;
     if (obj1.lastWorkedAt != obj2.lastWorkedAt) differences['lastWorkedAt'] = obj2.lastWorkedAt;
+    if (obj1.handoverDescription != obj2.handoverDescription)
+      differences['handover_description'] = obj2.handoverDescription;
+    if (!listEquals(obj1.handoverFiles, obj2.handoverFiles))
+      differences['handover_files'] = obj2.handoverFiles;
 
     return differences;
   }

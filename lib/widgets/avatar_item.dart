@@ -16,7 +16,6 @@ class AvatarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint("[THINK] ====> build avatar: ${avatar}");
     return Container(
       decoration: BoxDecoration(
         boxShadow: isShadow
@@ -61,8 +60,6 @@ class AvatarItem extends StatelessWidget {
                   }
                 },
             errorBuilder: (context, error, stackTrace) {
-              debugPrint("[THINK] ====> error: $error");
-              debugPrint("[THINK] ====> stack: $stackTrace");
               return Image.asset(
                 'assets/images/default_avatar.png',
                 color: Colors.grey.shade400,

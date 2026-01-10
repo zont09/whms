@@ -277,6 +277,7 @@ class MeetingCubit extends Cubit<int> {
     }
     final listSec = mapSection[meet.id] ?? [];
     int index = listSec.indexWhere((e) => e.id == section.id);
+    debugPrint("[THINK] ====> update section: ${section.id} -> ${section.attachments} : $index");
     if (index != -1) {
       if (!section.enable) {
         listSec.removeAt(index);
@@ -360,6 +361,7 @@ class MeetingCubit extends Cubit<int> {
         section.copyWith(attachments: [...section.attachments, file.id]), meet);
     mapFileAttach[file.id] = file;
     CacheUtils.instance.getFileGB(file.source);
+    debugPrint("[THINK] ====> add file: ${section.id} + ${meet.id} -> ${file.id}");
     EMIT();
   }
 

@@ -25,7 +25,7 @@ class DropdownString extends StatefulWidget {
       required this.initItem,
       required this.options,
       this.fontSize = 12,
-      this.maxWidth = 110,
+      this.maxWidth = 140,
       this.maxHeight = 32,
       this.radius = 50,
       this.borderColor = ColorConfig.border7,

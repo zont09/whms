@@ -52,37 +52,140 @@ class _TimelineCalendarViewState extends State<TimelineCalendarView> {
 
   Map<String, List<WorkingUnitModel>> _groupTasksByUser() {
     Map<String, List<WorkingUnitModel>> grouped = {};
+    Map<String, DateTime> taskWorkDate = {}; // Lưu ngày làm việc của task
+    Set<String> addedTaskIds = {}; // Để tránh duplicate tasks
 
-    if (widget.cubit.userSelected.isNotEmpty) {
-      // Nếu đã chọn user cụ thể
-      grouped[widget.cubit.userSelected] = widget.cubit.listDataWorkOfUser;
-    } else {
-      // Lấy tất cả tasks từ listHRData
-      for (var cardData in widget.cubit.listHRData) {
-        for (var hrTask in cardData.details) {
-          final task = hrTask.task;
+    print('>>> START _groupTasksByUser');
+    print('userSelected: ${widget.cubit.userSelected}');
+    print('scopeSelected: ${widget.cubit.scopeSelected}');
 
-          // Chỉ lấy task có urgent và deadline
-          if (task.urgent == null || task.deadline == null) continue;
+    // LUÔN LUÔN lấy tasks từ listHRData (tasks được làm việc trong khoảng thời gian)
+    print('Processing ${widget.cubit.listHRData.length} HR data cards');
 
-          // Group theo từng assignee
-          if (task.assignees.isEmpty) {
-            // Task không có assignee, bỏ qua hoặc gán vào "Unassigned"
+    int taskProcessed = 0;
+    int taskFiltered = 0;
+    int taskDuplicate = 0;
+    int taskNoAssignee = 0;
+    int taskNotInScope = 0;
+    int taskUserNotInScope = 0;
+    int taskNotMatchSelectedUser = 0;
+
+    for (var cardData in widget.cubit.listHRData) {
+      print('  Processing ${cardData.dateStr}: ${cardData.details.length} tasks');
+
+      // Parse ngày từ dateStr (format: "DD/MM/YYYY")
+      DateTime workDate = DateTime.now();
+      try {
+        final parts = cardData.dateStr.split('/');
+        if (parts.length == 3) {
+          workDate = DateTime(
+            int.parse(parts[2]), // year
+            int.parse(parts[1]), // month
+            int.parse(parts[0]), // day
+          );
+        }
+      } catch (e) {
+        print('    ⚠️  Cannot parse date: ${cardData.dateStr}');
+      }
+
+      for (var hrTask in cardData.details) {
+        final task = hrTask.task;
+        taskProcessed++;
+
+        print('    • Task: ${task.title}');
+        print('      - status: ${task.status}');
+        print('      - assignees: ${task.assignees}');
+        print('      - scopes: ${task.scopes}');
+        print('      - work date: ${DateTimeUtils.formatDateDayMonthYear(workDate)}');
+
+        // Bỏ qua task đã được thêm
+        if (addedTaskIds.contains(task.id)) {
+          print('      ❌ FILTERED: Duplicate');
+          taskFiltered++;
+          taskDuplicate++;
+          continue;
+        }
+
+        // Bỏ qua task không có assignee
+        if (task.assignees.isEmpty) {
+          print('      ❌ FILTERED: No assignee');
+          taskFiltered++;
+          taskNoAssignee++;
+          continue;
+        }
+
+        // Filter theo scope nếu có (chỉ khi KHÔNG chọn user cụ thể)
+        // Vì nếu đã chọn user, ta muốn xem tất cả tasks mà user đó làm
+        if (widget.cubit.scopeSelected.isNotEmpty && widget.cubit.userSelected.isEmpty) {
+          if (!task.scopes.contains(widget.cubit.scopeSelected)) {
+            print('      ❌ FILTERED: Not in selected scope (${widget.cubit.scopeSelected})');
+            taskFiltered++;
+            taskNotInScope++;
             continue;
           }
+        }
 
-          for (var userId in task.assignees) {
-            if (!grouped.containsKey(userId)) {
-              grouped[userId] = [];
-            }
-            // Kiểm tra task đã tồn tại chưa (tránh duplicate)
-            if (!grouped[userId]!.any((t) => t.id == task.id)) {
-              grouped[userId]!.add(task);
+        // Đánh dấu task đã được xử lý và lưu ngày làm việc
+        addedTaskIds.add(task.id);
+        taskWorkDate[task.id] = workDate;
+
+        // Group theo từng assignee
+        bool addedToAnyUser = false;
+        for (var userId in task.assignees) {
+          // Nếu có chọn user cụ thể, chỉ lấy tasks của user đó
+          if (widget.cubit.userSelected.isNotEmpty) {
+            if (userId != widget.cubit.userSelected) {
+              print('      ⚠️  User $userId not match selected user ${widget.cubit.userSelected}');
+              taskNotMatchSelectedUser++;
+              continue;
             }
           }
+
+          // Nếu có filter scope, chỉ hiển thị user thuộc scope đó
+          if (widget.cubit.scopeSelected.isNotEmpty) {
+            final userInScope = widget.cubit.mapUserInScope[widget.cubit.scopeSelected] ?? [];
+            if (!userInScope.any((u) => u.id == userId)) {
+              print('      ⚠️  User $userId not in scope');
+              taskUserNotInScope++;
+              continue;
+            }
+          }
+
+          if (!grouped.containsKey(userId)) {
+            grouped[userId] = [];
+          }
+          grouped[userId]!.add(task);
+          addedToAnyUser = true;
+          print('      ✅ Added to user: $userId on date ${DateTimeUtils.formatDateDayMonthYear(workDate)}');
+        }
+
+        if (!addedToAnyUser) {
+          print('      ❌ FILTERED: No valid assignee');
+          taskFiltered++;
         }
       }
     }
+
+    print('');
+    print('FILTER SUMMARY:');
+    print('  Total processed: $taskProcessed');
+    print('  Filtered out: $taskFiltered');
+    print('    - Duplicate: $taskDuplicate');
+    print('    - No assignee: $taskNoAssignee');
+    print('    - Not in scope: $taskNotInScope');
+    print('    - User not in scope: $taskUserNotInScope');
+    print('    - Not match selected user: $taskNotMatchSelectedUser');
+    print('  Kept: ${taskProcessed - taskFiltered}');
+
+    // Lưu taskWorkDate vào cubit để TimelineTaskItemWidget sử dụng
+    widget.cubit.taskWorkDateMap = taskWorkDate;
+
+    // Sắp xếp tasks theo status (tiến độ) cho mỗi user
+    grouped.forEach((userId, tasks) {
+      tasks.sort((a, b) => (b.status ?? 0).compareTo(a.status ?? 0));
+    });
+
+    print('>>> END _groupTasksByUser - Result: ${grouped.keys.length} users, Total tasks: ${grouped.values.fold(0, (sum, tasks) => sum + tasks.length)}');
 
     return grouped;
   }
@@ -93,14 +196,43 @@ class _TimelineCalendarViewState extends State<TimelineCalendarView> {
     final groupedTasks = _groupTasksByUser();
 
     // Debug: In ra số lượng data
-    print('=== TIMELINE DEBUG ===');
+    print('');
+    print('========== TIMELINE VIEW BUILD ==========');
+    print('timeMode: ${widget.cubit.timeMode}');
+    print('scopeSelected: ${widget.cubit.scopeSelected.isEmpty ? "ALL" : widget.cubit.scopeSelected}');
+    print('userSelected: ${widget.cubit.userSelected.isEmpty ? "ALL" : widget.cubit.userSelected}');
+    print('Date range: ${dates.length} days (${DateTimeUtils.formatDateDayMonthYear(widget.cubit.startTime)} - ${DateTimeUtils.formatDateDayMonthYear(widget.cubit.endTime)})');
+    print('---');
     print('listHRData count: ${widget.cubit.listHRData.length}');
-    print('groupedTasks users: ${groupedTasks.keys.length}');
+
+    // Log chi tiết từng ngày trong listHRData
+    for (var cardData in widget.cubit.listHRData) {
+      int totalTasks = 0;
+      for (var hrTask in cardData.details) {
+        totalTasks++;
+      }
+      print('  • ${cardData.dateStr}: ${cardData.details.length} HR tasks');
+    }
+
+    print('---');
+    print('Grouped users: ${groupedTasks.keys.length}');
+    int totalTasksInTimeline = 0;
     groupedTasks.forEach((userId, tasks) {
-      print('User $userId has ${tasks.length} tasks');
+      final userName = widget.cubit.mapUserModel[userId]?.name ?? 'Unknown';
+      print('  • $userName ($userId): ${tasks.length} tasks');
+      totalTasksInTimeline += tasks.length;
+      // Log 3 tasks đầu tiên của mỗi user
+      for (int i = 0; i < tasks.length && i < 3; i++) {
+        final task = tasks[i];
+        print('    - ${task.title} (${DateTimeUtils.formatDateDayMonthYear(task.urgent.toDate())} → ${DateTimeUtils.formatDateDayMonthYear(task.deadline.toDate())})');
+      }
+      if (tasks.length > 3) {
+        print('    ... and ${tasks.length - 3} more tasks');
+      }
     });
-    print('Date range: ${dates.length} days');
-    print('=====================');
+    print('Total tasks in timeline: $totalTasksInTimeline');
+    print('=========================================');
+    print('');
 
     if (widget.cubit.loading > 0) {
       return const Center(
@@ -269,17 +401,18 @@ class _TimelineCalendarViewState extends State<TimelineCalendarView> {
                             Text(
                               user?.name ?? 'Unknown',
                               style: TextStyle(
-                                fontSize: ScaleUtils.scaleSize(14, context),
+                                fontSize: ScaleUtils.scaleSize(13, context),
                                 fontWeight: FontWeight.w600,
                                 color: const Color(0xFF191919),
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
+                            const SizedBox(height: 2),
                             Text(
                               '${tasks.length} task${tasks.length > 1 ? 's' : ''}',
                               style: TextStyle(
-                                fontSize: ScaleUtils.scaleSize(12, context),
+                                fontSize: ScaleUtils.scaleSize(11, context),
                                 color: const Color(0xFF666666),
                               ),
                             ),
@@ -385,6 +518,7 @@ class _TimelineCalendarViewState extends State<TimelineCalendarView> {
                       task: task,
                       startDate: widget.cubit.startTime,
                       dayWidth: dayWidth,
+                      workDate: widget.cubit.taskWorkDateMap[task.id],
                     ),
                   ],
                 ),

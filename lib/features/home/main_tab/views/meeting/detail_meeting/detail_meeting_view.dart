@@ -32,6 +32,7 @@ class DetailMeetingView extends StatelessWidget {
       child: BlocBuilder<DetailMeetingCubit, int>(
         builder: (c, s) {
           var cubit = BlocProvider.of<DetailMeetingCubit>(c);
+          debugPrint("[THINK] ====> update section: ${cubitM.mapSection[meeting.id]?.firstOrNull?.attachments.length}");
           return SingleChildScrollView(
             child: Container(
               padding: EdgeInsets.all(ScaleUtils.scaleSize(20, context)),

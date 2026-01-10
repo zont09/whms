@@ -72,6 +72,8 @@ class HrTabCubit extends Cubit<int> {
 
   Map<String, WorkingUnitModel> mapAncestor = {};
 
+  Map<String, DateTime> taskWorkDateMap = {}; // Map lưu ngày làm việc của task
+
   Map<String, int> mapWorkChild = {};
 
   initData(
@@ -94,11 +96,11 @@ class HrTabCubit extends Cubit<int> {
     for (var e in listScope) {
       mapTaskInScope[e.id] = [
         ...cfC.allWorkingUnit.where((f) =>
-            f.scopes.contains(e) && f.type == TypeAssignmentDefine.task.title)
+        f.scopes.contains(e) && f.type == TypeAssignmentDefine.task.title)
       ];
       mapEpicInScope[e.id] = [
         ...cfC.allWorkingUnit.where((f) =>
-            f.scopes.contains(e) && f.type == TypeAssignmentDefine.epic.title)
+        f.scopes.contains(e) && f.type == TypeAssignmentDefine.epic.title)
       ];
       mapUserInScope[e.id] = [
         ...cfC.allUsers.where((f) => f.scopes.contains(e.id))
@@ -108,7 +110,7 @@ class HrTabCubit extends Cubit<int> {
     for (var scp in listScope) {
       if (!mapUserInScope.containsKey(scp.id)) {
         final userInScope =
-            cfC.allUsers.where((e) => e.scopes.contains(scp.id));
+        cfC.allUsers.where((e) => e.scopes.contains(scp.id));
         mapUserInScope[scp.id] = [...userInScope];
         for (var u in userInScope) {
           if (!mapUserModel.containsKey(u.id)) {
@@ -203,10 +205,19 @@ class HrTabCubit extends Cubit<int> {
     int currentRequest = ++request;
     loading++;
     EMIT();
-    if (timeMode == AppText.textByDay.text) {
+
+    print('========== LOAD DATA TABLE ==========');
+    print('timeMode: $timeMode');
+    print('scopeSelected: ${scopeSelected.isEmpty ? "ALL" : scopeSelected}');
+    print('userSelected: ${userSelected.isEmpty ? "ALL" : userSelected}');
+    print('startTime: ${DateTimeUtils.formatDateDayMonthYear(start)}');
+    print('endTime: ${DateTimeUtils.formatDateDayMonthYear(end)}');
+    print('=====================================');
+
+    if (timeMode == AppText.textByDay.text || timeMode == "Timeline") {
       for (DateTime date = start;
-          date.isBefore(end.add(const Duration(days: 1)));
-          date = date.add(const Duration(days: 1))) {
+      date.isBefore(end.add(const Duration(days: 1)));
+      date = date.add(const Duration(days: 1))) {
         final data = await getDataByDate(date);
         if (currentRequest != request) {
           loading--;
@@ -215,15 +226,17 @@ class HrTabCubit extends Cubit<int> {
         }
         if (data.logtime > 0 || userSelected.isNotEmpty) {
           listHRData.add(data);
+          print('📅 ${DateTimeUtils.formatDateDayMonthYear(date)}: ${data.details.length} tasks, logtime: ${data.logtime} minutes');
           EMIT();
         }
       }
+      print('✅ FINISHED loading - Total days with data: ${listHRData.length}');
     } else if (timeMode == AppText.textByWeek.text) {
       listHRData.clear();
       int cnt = 0;
       for (DateTime date = start;
-          date.isBefore(end.add(const Duration(days: 1)));
-          date = date.add(const Duration(days: 7))) {
+      date.isBefore(end.add(const Duration(days: 1)));
+      date = date.add(const Duration(days: 7))) {
         DateTime st = DateTimeUtils.getStartOfThisWeek(date);
         DateTime en = st.add(const Duration(days: 6));
 
@@ -248,8 +261,8 @@ class HrTabCubit extends Cubit<int> {
       }
     } else if (timeMode == AppText.textByMonth.text) {
       for (DateTime date = DateTime(start.year, start.month);
-          date.isBefore(DateTime(end.year, end.month + 1));
-          date = DateTime(date.year, date.month + 1)) {
+      date.isBefore(DateTime(end.year, end.month + 1));
+      date = DateTime(date.year, date.month + 1)) {
         final data = await getDataByMonth(date);
         if (currentRequest != request) {
           loading--;
@@ -281,8 +294,8 @@ class HrTabCubit extends Cubit<int> {
     List<HrTaskModel> listTmp = [];
 
     for (DateTime date = DateTime(inputDate.year, inputDate.month, 1);
-        date.isBefore(DateTime(inputDate.year, inputDate.month + 1, 1));
-        date = date.add(const Duration(days: 1))) {
+    date.isBefore(DateTime(inputDate.year, inputDate.month + 1, 1));
+    date = date.add(const Duration(days: 1))) {
       final data = await getDataByDate(date);
       workingTime += data.workingTime;
       workingPoint += data.workingPoint;
@@ -334,8 +347,8 @@ class HrTabCubit extends Cubit<int> {
     List<HrTaskModel> listTmp = [];
 
     for (DateTime date = start;
-        date.isBefore(end.add(const Duration(days: 1)));
-        date = date.add(const Duration(days: 1))) {
+    date.isBefore(end.add(const Duration(days: 1)));
+    date = date.add(const Duration(days: 1))) {
       final data = await getDataByDate(date);
       workingTime += data.workingTime;
       workingPoint += data.workingPoint;
@@ -356,7 +369,7 @@ class HrTabCubit extends Cubit<int> {
     CardHRModel newData = CardHRModel(
         date: start,
         dateStr:
-            "Tuần $cnt | ${start.day}/${start.month} - ${end.day}/${end.month}",
+        "Tuần $cnt | ${start.day}/${start.month} - ${end.day}/${end.month}",
         logtime: logTime,
         workingTime: workingTime,
         workingPoint: workingPoint,
@@ -468,7 +481,7 @@ class HrTabCubit extends Cubit<int> {
             work = mapWorkingUnit[wf.taskId];
           } else {
             work =
-                await _workingService.getWorkingUnitByIdIgnoreClosed(wf.taskId);
+            await _workingService.getWorkingUnitByIdIgnoreClosed(wf.taskId);
             mapWorkingUnit[wf.taskId] = work;
           }
           if (curReq != requestGetData) return CardHRModel();
@@ -497,8 +510,8 @@ class HrTabCubit extends Cubit<int> {
                 }
                 workingTime += wf.duration;
                 ddTask[workPar.id] =
-                    // ddTask[workPar.id]! + percentStatus * work.duration ~/ 100;
-                    ddTask[workPar.id]! + wf.duration;
+                // ddTask[workPar.id]! + percentStatus * work.duration ~/ 100;
+                ddTask[workPar.id]! + wf.duration;
               }
             }
             if (work.type == TypeAssignmentDefine.task.title) {
@@ -588,7 +601,7 @@ class HrTabCubit extends Cubit<int> {
     await cfC.getDataWorkingUnitNewest(userSelected);
     // await cfC.getDataWorkingUnitClosedNewest(userSelected);
     final works =
-        cfC.allWorkingUnit.where((e) => e.assignees.contains(userSelected) && !e.closed);
+    cfC.allWorkingUnit.where((e) => e.assignees.contains(userSelected) && !e.closed);
     // mapTaskChild = {...cfC.mapWorkChild};
     // await _workingService
     //     .getWorkingUnitByIdUserIgnoreClosed(userSelected);
@@ -651,7 +664,7 @@ class HrTabCubit extends Cubit<int> {
             workSub = mapWorkingUnit[wf.taskId];
           } else {
             workSub =
-                await _workingService.getWorkingUnitByIdIgnoreClosed(wf.taskId);
+            await _workingService.getWorkingUnitByIdIgnoreClosed(wf.taskId);
           }
 
           if (currentRequest != request) {
@@ -709,7 +722,7 @@ class HrTabCubit extends Cubit<int> {
           return;
         }
         final listSub =
-            listSubTask.where((item) => item.parent == work.id).toList();
+        listSubTask.where((item) => item.parent == work.id).toList();
 
         int cnt = 0;
         int done = 0;
@@ -799,8 +812,8 @@ class HrTabCubit extends Cubit<int> {
         ? [userSelected]
         : mapUserInScope[scopeSelected]!.map((item) => item.id).toList());
     for (DateTime date = startTime;
-        date.isBefore(endTime.add(const Duration(days: 1)));
-        date = date.add(const Duration(days: 1))) {
+    date.isBefore(endTime.add(const Duration(days: 1)));
+    date = date.add(const Duration(days: 1))) {
       for (var user in listUsers) {
         WorkShiftModel? workShift;
         if (mapWorkShift.containsKey("${user}_${date}") &&
@@ -851,7 +864,7 @@ class HrTabCubit extends Cubit<int> {
             work = mapWorkingUnit[wf.taskId];
           } else {
             work =
-                await _workingService.getWorkingUnitByIdIgnoreClosed(wf.taskId);
+            await _workingService.getWorkingUnitByIdIgnoreClosed(wf.taskId);
             mapWorkingUnit[wf.taskId] = work;
           }
           if (work == null || !work.scopes.contains(scopeSelected)) continue;
@@ -864,7 +877,7 @@ class HrTabCubit extends Cubit<int> {
                 wf.fromStatus,
                 wf.toStatus);
             int indexTask =
-                listTaskData.indexWhere((item) => item.work.id == work!.id);
+            listTaskData.indexWhere((item) => item.work.id == work!.id);
             if (indexTask == -1) {
               listTaskData.add(whs);
             } else {
@@ -904,7 +917,7 @@ class HrTabCubit extends Cubit<int> {
                 wf.toStatus);
 
             int indexSub =
-                taskChildren.indexWhere((item) => item.work.id == work!.id);
+            taskChildren.indexWhere((item) => item.work.id == work!.id);
             if (indexSub == -1) {
               taskChildren.add((whsSubtask));
             } else {
@@ -920,7 +933,7 @@ class HrTabCubit extends Cubit<int> {
 
             if (!listTaskData.any((item) => item.work.id == workPar!.id)) {
               WorkHistorySynthetic whs =
-                  WorkHistorySynthetic(workPar, 0, 0, -2209, -2209);
+              WorkHistorySynthetic(workPar, 0, 0, -2209, -2209);
               listTaskData.add(whs);
             }
           }
@@ -947,7 +960,7 @@ class HrTabCubit extends Cubit<int> {
   groupData() async {
     mapTaskDataGroup.clear();
     final personal =
-        WorkingUnitModel(id: "personal", title: AppText.titlePersonal.text);
+    WorkingUnitModel(id: "personal", title: AppText.titlePersonal.text);
     final other = WorkingUnitModel(id: "other", title: AppText.textOther.text);
     for (var e in listTaskData) {
       WorkingUnitModel ancestor = await findAncestor(e.work);
@@ -976,7 +989,7 @@ class HrTabCubit extends Cubit<int> {
     mapDataWorkOfUserGroup.clear();
     mapTaskSumDataGroup.clear();
     final personal =
-        WorkingUnitModel(id: "personal", title: AppText.titlePersonal.text);
+    WorkingUnitModel(id: "personal", title: AppText.titlePersonal.text);
     final other = WorkingUnitModel(id: "other", title: AppText.textOther.text);
     for (var e in listDataWorkOfUser) {
       if (userSelected.isNotEmpty &&
@@ -1019,7 +1032,7 @@ class HrTabCubit extends Cubit<int> {
         cntSubtask = mapWorkChild[e.id]!;
       } else {
         final subChildren =
-            cfC.allWorkingUnit.where((f) => f.parent == e.id).toList();
+        cfC.allWorkingUnit.where((f) => f.parent == e.id).toList();
         // await _workingService.getWorkingUnitByIdParent(e.id);
         mapWorkChild[e.id] = subChildren.length;
         mapTaskChild[e.id] = subChildren;
@@ -1049,7 +1062,7 @@ class HrTabCubit extends Cubit<int> {
     await cfC.getDataWorkingUnitNewest(userSelected);
     await cfC.getDataWorkingUnitClosedNewest(userSelected);
     final listSubtask =
-        cfC.allWorkingUnit.where((e) => e.parent == task).toList();
+    cfC.allWorkingUnit.where((e) => e.parent == task).toList();
     // final listSubtask =
     //     await _workingService.getWorkingUnitByIdParentIgnoreClosed(task);
     for (var task in listSubtask) {
@@ -1193,8 +1206,8 @@ class HrTabCubit extends Cubit<int> {
         scopeSelected, TypeAssignmentDefine.epic.title);
     final epics = cfC.allWorkingUnit
         .where((e) =>
-            e.scopes.contains(scopeSelected) &&
-            e.type == TypeAssignmentDefine.epic.title)
+    e.scopes.contains(scopeSelected) &&
+        e.type == TypeAssignmentDefine.epic.title)
         .toList();
     // await _workingService.getAllEpicInScopeIgnoreClosed(scopeSelected);
     mapEpicInScope[scopeSelected] = [...epics];
@@ -1205,7 +1218,7 @@ class HrTabCubit extends Cubit<int> {
     if (mapAddress.containsKey(id)) return mapAddress[id]!;
     List<WorkingUnitModel> tmp = [];
     final work =
-        await WorkingService.instance.getWorkingUnitByIdIgnoreClosed(id);
+    await WorkingService.instance.getWorkingUnitByIdIgnoreClosed(id);
     if (work != null) {
       tmp = await findAddress(work.parent);
       if (tmp.isNotEmpty) {
@@ -1240,7 +1253,7 @@ class HrTabCubit extends Cubit<int> {
       workPar = mapWorkingUnit[work.parent];
     } else {
       workPar =
-          await _workingService.getWorkingUnitByIdIgnoreClosed(work.parent);
+      await _workingService.getWorkingUnitByIdIgnoreClosed(work.parent);
       if (workPar != null) {
         mapWorkingUnit[work.parent] = workPar;
       }
@@ -1266,7 +1279,7 @@ class HrTabCubit extends Cubit<int> {
     }
     await cfC.getDataWorkingUnitByScopeNewest(scopeSelected);
     final tasks =
-        cfC.allWorkingUnit.where((e) => e.scopes.contains(scopeSelected));
+    cfC.allWorkingUnit.where((e) => e.scopes.contains(scopeSelected));
     // await _workingService.getAllTaskInScopeIgnoreClosed(scopeSelected);
     listTaskScope = [...tasks];
     mapTaskInScope[scopeSelected] = [...tasks];
@@ -1282,7 +1295,7 @@ class HrTabCubit extends Cubit<int> {
     } else {
       await cfC.getDataWorkingUnitByScopeNewest(scopeSelected);
       final tasks = cfC.allWorkingUnit.where((e) =>
-          e.scopes.contains(scopeSelected) &&
+      e.scopes.contains(scopeSelected) &&
           e.type == TypeAssignmentDefine.task.title);
       mapTaskInScope[scopeSelected] = [...tasks];
       return tasks;
@@ -1293,7 +1306,7 @@ class HrTabCubit extends Cubit<int> {
     mapDataTaskScopeGroup.clear();
     mapTaskSumDataGroup.clear();
     final personal =
-        WorkingUnitModel(id: "personal", title: AppText.titlePersonal.text);
+    WorkingUnitModel(id: "personal", title: AppText.titlePersonal.text);
     final other = WorkingUnitModel(id: "other", title: AppText.textOther.text);
     for (var e in listTaskScope) {
       WorkingUnitModel ancestor = await findAncestor(e);
@@ -1325,7 +1338,7 @@ class HrTabCubit extends Cubit<int> {
         cntSubtask = mapWorkChild[e.id]!;
       } else {
         final subChildren =
-            cfC.allWorkingUnit.where((f) => f.parent == e.id).toList();
+        cfC.allWorkingUnit.where((f) => f.parent == e.id).toList();
         // await _workingService.getWorkingUnitByIdParent(e.id);
         mapWorkChild[e.id] = subChildren.length;
         mapTaskChild[e.id] = subChildren;
@@ -1523,10 +1536,10 @@ class HrTabCubit extends Cubit<int> {
     }
     return listData
         .where((e) =>
-            e.deadline.toDate().isBefore(end.add(const Duration(days: 1))) &&
-            e.deadline
-                .toDate()
-                .isAfter(start.subtract(const Duration(days: 1))))
+    e.deadline.toDate().isBefore(end.add(const Duration(days: 1))) &&
+        e.deadline
+            .toDate()
+            .isAfter(start.subtract(const Duration(days: 1))))
         .toList();
   }
 
