@@ -52,7 +52,7 @@ class CreateAssignmentPopup extends StatelessWidget {
           var cubit = BlocProvider.of<AssignmentPopupCubit>(c);
           return SizedBox(
               key: Key(selectedWorking.id),
-              width: ScaleUtils.scaleSize(600, context),
+              width: ScaleUtils.scaleSize(620, context),
               height: ScaleUtils.scaleSize(550, context),
               child: Stack(children: [
                 CreateAssignmentForm(

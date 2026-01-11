@@ -153,8 +153,8 @@ class ManagementCubit extends Cubit<int> {
     var listWork = tab == 0
         ? tabX
         : tab == 1
-            ? tabY
-            : tabZ;
+        ? tabY
+        : tabZ;
     final tmp = listWork[index1];
     listWork.removeAt(index1);
     listWork.insert(index2, tmp);
@@ -169,8 +169,8 @@ class ManagementCubit extends Cubit<int> {
     var listWork = tab == 0
         ? tabX
         : tab == 1
-            ? tabY
-            : tabZ;
+        ? tabY
+        : tabZ;
 
     if (mapSorted['id_sorted_${handlerUser.id}_$listName'] != null) {
       sorted = mapSorted['id_sorted_${handlerUser.id}_$listName'];
@@ -263,8 +263,8 @@ class ManagementCubit extends Cubit<int> {
         isAll: filters.indexOf(selectedFilter!) == 1);
     listWorkings = cfC.allWorkingUnit
         .where((e) =>
-            e.scopes.contains(selectedScope!.id) &&
-            (filters.indexOf(selectedFilter!) == 1 || !e.closed))
+    e.scopes.contains(selectedScope!.id) &&
+        (filters.indexOf(selectedFilter!) == 1 || !e.closed))
         .toList();
     // listWorkings = await _workingService.getWorkingUnitByScopeId(
     //     selectedScope!.id,
@@ -287,8 +287,8 @@ class ManagementCubit extends Cubit<int> {
                 }
                 var tmpChild1 = cfC.allWorkingUnit
                     .where((e) =>
-                        e.scopes.contains(i) &&
-                        (filters.indexOf(selectedFilter!) == 1 || !e.closed))
+                e.scopes.contains(i) &&
+                    (filters.indexOf(selectedFilter!) == 1 || !e.closed))
                     .toList();
                 // var tmpChild1 =
                 //     await _workingService.getWorkingUnitByScopeId(i);
@@ -299,7 +299,7 @@ class ManagementCubit extends Cubit<int> {
           } else {
             listWorkings!.removeWhere((e) => e.id == w.id);
             final listDescendants =
-                findDescendantsRecursive(w.id, listWorkings!);
+            findDescendantsRecursive(w.id, listWorkings!);
             for (var e in listDescendants) {
               listWorkings!.remove(e);
             }
@@ -505,10 +505,10 @@ class ManagementCubit extends Cubit<int> {
     }
     var children = allItems
         .where((item) =>
-            item.parent == parentId &&
-            item.type != TypeAssignmentDefine.subtask.title &&
-            StatusWorkingExtension.fromValue(item.status) !=
-                StatusWorkingDefine.cancelled)
+    item.parent == parentId &&
+        item.type != TypeAssignmentDefine.subtask.title &&
+        StatusWorkingExtension.fromValue(item.status) !=
+            StatusWorkingDefine.cancelled)
         .toList();
 
     if (children.isEmpty) {
@@ -528,8 +528,8 @@ class ManagementCubit extends Cubit<int> {
 
     int average = children.fold<int>(
         0,
-        (prev, e) =>
-            prev +
+            (prev, e) =>
+        prev +
             StatusWorkingExtension.fromPercent(e.status,
                 isTask: e.type == TypeAssignmentDefine.task.title));
 
@@ -552,7 +552,29 @@ class ManagementCubit extends Cubit<int> {
     if (isClosed) {
       return;
     }
+    // Loại bỏ duplicate trước khi build UI
+    _removeDuplicates();
     emit(state + 1);
+  }
+
+  // Helper method để loại bỏ các items có ID trùng nhau
+  void _removeDuplicates() {
+    tabX = _removeDuplicateItems(tabX);
+    tabY = _removeDuplicateItems(tabY);
+    tabZ = _removeDuplicateItems(tabZ);
+    tabS = _removeDuplicateItems(tabS);
+    level1 = _removeDuplicateItems(level1);
+    level2 = _removeDuplicateItems(level2);
+    level3 = _removeDuplicateItems(level3);
+    if (listWorkings != null) {
+      listWorkings = _removeDuplicateItems(listWorkings!);
+    }
+  }
+
+  // Helper method để loại bỏ duplicate từ một list
+  List<WorkingUnitModel> _removeDuplicateItems(List<WorkingUnitModel> list) {
+    final seenIds = <String>{};
+    return list.where((item) => seenIds.add(item.id)).toList();
   }
 
   getListUser(List<String> list, List<UserModel> models) {
@@ -577,7 +599,7 @@ class ManagementCubit extends Cubit<int> {
     if (selectedWorking?.type != TypeAssignmentDefine.task.title) {
       await cfC.getDataWorkingUnitByIdParentNewest(selectedWorking!.id);
       var tmp = cfC.allWorkingUnit.where((e) =>
-          e.parent == selectedWorking!.id &&
+      e.parent == selectedWorking!.id &&
           (selectedFilter == filters[1] || !e.closed));
       // await _workingService.getWorkingUnitByIdParent(selectedWorking!.id);
       list.addAll(tmp);
@@ -619,18 +641,27 @@ class ManagementCubit extends Cubit<int> {
       list.addAll(tmp2);
     }
 
+    // Thêm items vào các tab và đảm bảo không trùng ID
     for (var i in list) {
       if (i.type == AppText.txtSprint.text) {
-        tabX.add(i);
+        if (!tabX.any((item) => item.id == i.id)) {
+          tabX.add(i);
+        }
       }
       if (i.type == AppText.txtStory.text) {
-        tabY.add(i);
+        if (!tabY.any((item) => item.id == i.id)) {
+          tabY.add(i);
+        }
       }
       if (i.type == AppText.txtTask.text) {
-        tabZ.add(i);
+        if (!tabZ.any((item) => item.id == i.id)) {
+          tabZ.add(i);
+        }
       }
       if (i.type == AppText.txtSubTask.text) {
-        tabS.add(i);
+        if (!tabS.any((item) => item.id == i.id)) {
+          tabS.add(i);
+        }
       }
     }
     if (tabX.length > 1) {
@@ -671,11 +702,11 @@ class ManagementCubit extends Cubit<int> {
           break;
         case 2:
           newPosition =
-              '${position.substring(0, 3)}${index.toString().padLeft(3, '0')}000';
+          '${position.substring(0, 3)}${index.toString().padLeft(3, '0')}000';
           break;
         case 3:
           newPosition =
-              '${position.substring(0, 6)}${index.toString().padLeft(3, '0')}';
+          '${position.substring(0, 6)}${index.toString().padLeft(3, '0')}';
           break;
       }
 
@@ -703,6 +734,12 @@ class ManagementCubit extends Cubit<int> {
   }
 
   addItemToTree(WorkingUnitModel newItem) async {
+    // Kiểm tra xem item đã tồn tại chưa
+    if (listWorkings!.any((item) => item.id == newItem.id)) {
+      debugPrint("=====> Item already exists, skipping: ${newItem.id}");
+      return;
+    }
+
     bool isDone = false;
     if (newItem.parent.isEmpty) {
       int newIndex = workings.length + 1;
@@ -721,13 +758,13 @@ class ManagementCubit extends Cubit<int> {
           switch (item.level) {
             case 1:
               newPosition =
-                  '${item.position.substring(0, 3)}${newIndex.toString().padLeft(3, '0')}000';
+              '${item.position.substring(0, 3)}${newIndex.toString().padLeft(3, '0')}000';
             case 2:
               newPosition =
-                  '${item.position.substring(0, 6)}${newIndex.toString().padLeft(3, '0')}';
+              '${item.position.substring(0, 6)}${newIndex.toString().padLeft(3, '0')}';
             case 3:
               newPosition =
-                  '${item.position.substring(0, 9)}${newIndex.toString().padLeft(3, '0')}';
+              '${item.position.substring(0, 9)}${newIndex.toString().padLeft(3, '0')}';
           }
           newItem.position = newPosition;
           newItem.level = item.level + 1;
@@ -740,23 +777,32 @@ class ManagementCubit extends Cubit<int> {
           switch (newItem.level) {
             case 2:
               level2.add(newItem);
-            // break;
+          // break;
             case 3:
               level3.add(newItem);
-            // break;
+          // break;
           }
 
+          // Kiểm tra trước khi add vào các tab để tránh duplicate
           if (newItem.type == AppText.txtSprint.text) {
-            tabX.add(newItem);
+            if (!tabX.any((tab) => tab.id == newItem.id)) {
+              tabX.add(newItem);
+            }
           }
           if (newItem.type == AppText.txtStory.text) {
-            tabY.add(newItem);
+            if (!tabY.any((tab) => tab.id == newItem.id)) {
+              tabY.add(newItem);
+            }
           }
           if (newItem.type == AppText.txtTask.text) {
-            tabZ.add(newItem);
+            if (!tabZ.any((tab) => tab.id == newItem.id)) {
+              tabZ.add(newItem);
+            }
           }
           if (newItem.type == AppText.txtSubTask.text) {
-            tabS.add(newItem);
+            if (!tabS.any((tab) => tab.id == newItem.id)) {
+              tabS.add(newItem);
+            }
           }
           break;
         }
@@ -783,7 +829,7 @@ class ManagementCubit extends Cubit<int> {
       int index2 = listWorkings!.indexWhere((e) => e.id == work.id);
       if (index2 != -1) {
         final diff =
-            WorkingUnitModel.getDifferentFields(work, listWorkings![index2]);
+        WorkingUnitModel.getDifferentFields(work, listWorkings![index2]);
         if (diff.isEmpty) return false;
         if (index2 != -1) {
           final tmp = listWorkings![index2];

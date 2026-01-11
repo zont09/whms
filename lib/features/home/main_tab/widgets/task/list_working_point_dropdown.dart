@@ -41,7 +41,7 @@ class _ListWorkingPointDropdownState extends State<ListWorkingPointDropdown> {
         }
       },
       child: Container(
-          width: ScaleUtils.scaleSize(_selectedItem < 0 ? 115 : 100, context),
+          width: ScaleUtils.scaleSize(_selectedItem < 0 ? 140 : 140, context),
           alignment: Alignment.centerLeft,
           padding: EdgeInsets.symmetric(
               horizontal:
@@ -97,18 +97,20 @@ class _ListWorkingPointDropdownState extends State<ListWorkingPointDropdown> {
                                 fontSize: ScaleUtils.scaleSize(12, context),
                                 fontWeight: FontWeight.w500))),
                     SizedBox(width: ScaleUtils.scaleSize(5, context)),
-                    Text(
-                        _selectedItem < 0
-                            ? AppText.txtWorkingPoint.text
-                            : AppText.txtPoint.text,
-                        style: TextStyle(
-                            color: _selectedItem < 0
-                                ? ColorConfig.textColor
-                                : const Color(0xFF0F3A9D),
-                            letterSpacing:
-                            ScaleUtils.scaleSize(-0.02 * 12, context),
-                            fontSize: ScaleUtils.scaleSize(12, context),
-                            fontWeight: FontWeight.w500)),
+                    Expanded(
+                      child: Text(
+                          _selectedItem < 0
+                              ? AppText.txtWorkingPoint.text
+                              : AppText.txtPoint.text,
+                          style: TextStyle(
+                              color: _selectedItem < 0
+                                  ? ColorConfig.textColor
+                                  : const Color(0xFF0F3A9D),
+                              letterSpacing:
+                              ScaleUtils.scaleSize(-0.02 * 12, context),
+                              fontSize: ScaleUtils.scaleSize(12, context),
+                              fontWeight: FontWeight.w500)),
+                    ),
                     if (_selectedItem < 0)
                       Icon(
                           !isOpen.value

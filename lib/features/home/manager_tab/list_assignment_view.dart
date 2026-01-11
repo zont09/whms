@@ -21,7 +21,7 @@ class ListAssignmentView extends StatelessWidget {
     var managementCubit = BlocProvider.of<ManagementCubit>(context);
     return Padding(
         padding:
-            EdgeInsets.symmetric(horizontal: ScaleUtils.scaleSize(20, context)),
+        EdgeInsets.symmetric(horizontal: ScaleUtils.scaleSize(20, context)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           SizedBox(height: ScaleUtils.scaleSize(10, context)),
           // if (managementCubit.selectedWorking!.type !=
@@ -34,42 +34,42 @@ class ListAssignmentView extends StatelessWidget {
                   color: ColorConfig.textColor)),
           managementCubit.selectedWorking!.tabs.isNotEmpty
               ? Column(children: [
-                  ListAssignmentTabBar(
-                      tabs: managementCubit.selectedWorking!.tabs,
-                      managementCubit: managementCubit),
-                  if ((managementCubit.tab == 0 &&
-                          managementCubit.tabX.isNotEmpty) ||
-                      (managementCubit.tab == 1 &&
-                          managementCubit.tabY.isNotEmpty) ||
-                      (managementCubit.tab == 2 &&
-                          managementCubit.tabZ.isNotEmpty))
-                    ListAssignmentHeader(managementCubit.tab),
-                  AssignmentTabBarView(managementCubit)
-                ])
+            ListAssignmentTabBar(
+                tabs: managementCubit.selectedWorking!.tabs,
+                managementCubit: managementCubit),
+            if ((managementCubit.tab == 0 &&
+                managementCubit.tabX.isNotEmpty) ||
+                (managementCubit.tab == 1 &&
+                    managementCubit.tabY.isNotEmpty) ||
+                (managementCubit.tab == 2 &&
+                    managementCubit.tabZ.isNotEmpty))
+              ListAssignmentHeader(managementCubit.tab),
+            AssignmentTabBarView(managementCubit)
+          ])
               : Column(children: [
-                  if (managementCubit.tab == 2 &&
-                      managementCubit.tabZ.isNotEmpty)
-                    ListAssignmentHeader(managementCubit.tab),
-                  if (managementCubit.tabS.isNotEmpty)
-                    const ListAssignmentHeader(4),
-                  ReorderAbleWidget(
-                      changeOrder: (a, b) => managementCubit.changeOrder(a, b),
-                      children: [
-                        ...managementCubit.tabS.map((e) =>
-                            ManagementAssignmentItem(e,
-                                key: Key(e.id),
-                                choose: () async =>
-                                    await managementCubit.chooseWorkingUnit(e),
-                                endEvent: () async {
-                                  var temp = managementCubit.selectedWorking!;
-                                  await managementCubit.loadListWorkings();
-                                  await managementCubit.chooseWorkingUnit(temp);
-                                },
-                                reload: (v) async {},
-                                address: managementCubit.link,
-                                typeAssignment: 1000))
-                      ])
-                ]),
+            if (managementCubit.tab == 2 &&
+                managementCubit.tabZ.isNotEmpty)
+              ListAssignmentHeader(managementCubit.tab),
+            if (managementCubit.tabS.isNotEmpty)
+              const ListAssignmentHeader(4),
+            ReorderAbleWidget(
+                changeOrder: (a, b) => managementCubit.changeOrder(a, b),
+                children: [
+                  ...managementCubit.tabS.map((e) =>
+                      ManagementAssignmentItem(e,
+                          key: Key(e.id),
+                          choose: () async =>
+                          await managementCubit.chooseWorkingUnit(e),
+                          endEvent: () async {
+                            var temp = managementCubit.selectedWorking!;
+                            await managementCubit.loadListWorkings();
+                            await managementCubit.chooseWorkingUnit(temp);
+                          },
+                          reload: (v) async {},
+                          address: managementCubit.link,
+                          typeAssignment: 1000))
+                ])
+          ]),
           if ((managementCubit.tab == 0 && managementCubit.tabX.isNotEmpty) ||
               (managementCubit.tab == 1 && managementCubit.tabY.isNotEmpty) ||
               (managementCubit.tab == 2 && managementCubit.tabZ.isNotEmpty))
@@ -88,15 +88,15 @@ class ListAssignmentView extends StatelessWidget {
                               ancestries: managementCubit.ancestries,
                               typeAssignment: managementCubit.tab + 5,
                               reload: (v) async {
-                                // await managementCubit.addItemToTree(v);
-                                await managementCubit.buildUI();
+                                // Stream listener sẽ tự động cập nhật UI
+                                // Không cần gọi buildUI() ở đây để tránh duplicate
                               },
                               isSub: true,
                               scopes: [managementCubit.selectedScope!.id],
                               userId: managementCubit.handlerUser.id,
                               selectedWorking: managementCubit.selectedWorking!,
                               assignees:
-                                  managementCubit.selectedWorking!.assignees));
+                              managementCubit.selectedWorking!.assignees));
                     }
                   })
                 ])),

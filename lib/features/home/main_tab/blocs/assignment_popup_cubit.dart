@@ -102,7 +102,7 @@ class AssignmentPopupCubit extends Cubit<int> {
             urgent: urgentStamp,
             workingPoint: selectedWP,
             type: selectedType.title),
-          model);
+            model);
         // await _workingService.updateWorkingUnitField(
         //     model.copyWith(
         //         title: conName.text,
@@ -142,7 +142,7 @@ class AssignmentPopupCubit extends Cubit<int> {
     var start = DateTimeUtils.convertToDateTime(conStartDate.text);
     var end = DateTimeUtils.convertToDateTime(conEndDate.text);
     var urgent = conExecuteDate.text ==
-            '${AppText.textTime.text} ${AppText.titleUrgent.text}'
+        '${AppText.textTime.text} ${AppText.titleUrgent.text}'
         ? DateTimeUtils.convertToDateTime(conEndDate.text)
         : DateTimeUtils.convertToDateTime(conExecuteDate.text);
 
@@ -157,7 +157,7 @@ class AssignmentPopupCubit extends Cubit<int> {
     }
 
     List<String> assignees =
-        selectedScope.fold([], (prev, e) => [...prev, ...e.members]);
+    selectedScope.fold([], (prev, e) => [...prev, ...e.members]);
     var assignment = WorkingUnitModel(
         id: newDoc.id,
         title: conName.text,
@@ -173,21 +173,21 @@ class AssignmentPopupCubit extends Cubit<int> {
         scopes: scopes,
         okrs: model.okrs,
         urgent: selectedType != TypeAssignmentDefine.epic &&
-                selectedType != TypeAssignmentDefine.okrs
+            selectedType != TypeAssignmentDefine.okrs
             ? urgentStamp
             : Timestamp(0, 0),
         owner: userId,
         assignees: isTaskPersonal
             ? users
             : selectedType == TypeAssignmentDefine.okrs
-                ? assignees
-                : list,
+            ? assignees
+            : list,
         start: selectedType != TypeAssignmentDefine.epic &&
-                selectedType != TypeAssignmentDefine.okrs
+            selectedType != TypeAssignmentDefine.okrs
             ? startStamp
             : Timestamp(0, 0),
         deadline: selectedType != TypeAssignmentDefine.epic &&
-                selectedType != TypeAssignmentDefine.okrs
+            selectedType != TypeAssignmentDefine.okrs
             ? endStamp
             : Timestamp(0, 0));
     if (selectedType == TypeAssignmentDefine.epic ||
@@ -197,6 +197,8 @@ class AssignmentPopupCubit extends Cubit<int> {
       await addNewAssignment(assignment);
       Navigator.pop(context);
       Navigator.pop(context);
+      // Delay để stream listener kịp xử lý trước khi gọi reload
+      await Future.delayed(const Duration(milliseconds: 300));
       reload(assignment);
     }
 
@@ -206,6 +208,8 @@ class AssignmentPopupCubit extends Cubit<int> {
         await addNewAssignment(assignment);
         Navigator.pop(context);
         Navigator.pop(context);
+        // Delay để stream listener kịp xử lý trước khi gọi reload
+        await Future.delayed(const Duration(milliseconds: 300));
         reload(assignment);
       } else {
         DialogUtils.showResultDialog(
@@ -243,6 +247,8 @@ class AssignmentPopupCubit extends Cubit<int> {
               deadline: assignment.deadline));
           Navigator.pop(context);
           Navigator.pop(context);
+          // Delay để stream listener kịp xử lý trước khi gọi reload
+          await Future.delayed(const Duration(milliseconds: 300));
           reload(assignment);
         } else {
           DialogUtils.showResultDialog(
