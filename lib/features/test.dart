@@ -365,7 +365,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
 
   Future<void> _initSignaling() async {
     signaling = Signaling(
-      wsUrl: "ws://127.0.0.1:8000/ws/$roomId/$clientId", // đổi theo server
+      wsUrl: "ws://54.169.194.251:8000/ws/$roomId/$clientId", // đổi theo server
       clientId: clientId,
     );
 
