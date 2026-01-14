@@ -54,7 +54,7 @@ class ChatDemo extends StatefulWidget {
 class _ChatDemoState extends State<ChatDemo> {
   final userIdController = TextEditingController(text: 'think');
   final conversationIdController = TextEditingController(text: 'g1');
-  final apiUrlController = TextEditingController(text: 'http://54.169.194.251:8000/api');
+  final apiUrlController = TextEditingController(text: 'https://api.whms-uit.pls.edu.vn/api');
   bool showChat = false;
 
   @override
