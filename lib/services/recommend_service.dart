@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:whms/configs/app_configs.dart';
 import 'package:whms/models/recommend_model.dart';
 
 class RecommendationService {
@@ -9,7 +10,7 @@ class RecommendationService {
   RecommendationService._internal();
 
   // Có thể thay đổi base URL khi cần
-  String baseUrl = 'http://localhost:8000';
+  String baseUrl = AppConfigs.backend;
 
   Future<RecommendationResponseModel> recommendEmployees({
     required String title,

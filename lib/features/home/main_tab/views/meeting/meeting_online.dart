@@ -539,7 +539,7 @@ class _VideoCallPageState extends State<VideoCallPage> {
 
   Future<void> _initSignaling() async {
     signaling = Signaling(
-      wsUrl: "ws://api.whms-uit.pls.edu.vn/call/ws/${widget.roomId}/${widget.userId}",
+      wsUrl: "wss://api.whms-uit.pls.edu.vn/call/ws/${widget.roomId}/${widget.userId}",
       userId: widget.userId,
     );
     await signaling!.initLocalStream();

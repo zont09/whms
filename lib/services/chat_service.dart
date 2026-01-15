@@ -10,7 +10,7 @@ class ChatWebSocketService {
 
   void connect(String conversationId, String clientId) {
     _channel = WebSocketChannel.connect(
-      Uri.parse("ws://localhost:8000/api/ws/chat/$conversationId/$clientId"),
+      Uri.parse("wss://api.whms-uit.pls.edu.vn/api/ws/chat/$conversationId/$clientId"),
     );
   }
 
@@ -31,7 +31,7 @@ class ChatWebSocketService {
 }
 
 class ChatApiService {
-  final String base = "http://localhost:8000/api/chats";
+  final String base = "https://api.whms-uit.pls.edu.vn/api/chats";
 
   Future<List<ChatMessage>> loadMessages(String conversationId) async {
     final res = await http.get(Uri.parse("$base/$conversationId/messages"));

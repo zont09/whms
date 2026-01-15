@@ -42,7 +42,7 @@ class MultiChatManager extends StatefulWidget {
 }
 
 class _MultiChatManagerState extends State<MultiChatManager>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   bool _isExpanded = false;
   String? _selectedConversationId;
   late AnimationController _animationController;
@@ -147,7 +147,12 @@ class _MultiChatManagerState extends State<MultiChatManager>
     try {
       print('🔌 Connecting WebSocket for conversation: $conversationId');
 
-      final wsUrl = widget.apiBaseUrl.replaceFirst('http', 'ws');
+      String wsUrl = widget.apiBaseUrl;
+      if (wsUrl.startsWith('https://')) {
+        wsUrl = wsUrl.replaceFirst('https://', 'wss://');
+      } else if (wsUrl.startsWith('http://')) {
+        wsUrl = wsUrl.replaceFirst('http://', 'ws://');
+      }
       final channel = WebSocketChannel.connect(
         Uri.parse('$wsUrl/ws/$conversationId/${widget.userId}'),
       );
@@ -708,36 +713,48 @@ class _MultiChatManagerState extends State<MultiChatManager>
     print('🏗️ Building ChatPopup for: $conversationId');
 
     return UniqueKey() != null
-        ? Material(
-      elevation: 20,
-      borderRadius: BorderRadius.circular(20),
-      shadowColor: AppColors.primary2.withOpacity(0.3),
-      child: Container(
-        width: 420,
-        height: 650,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: AppColors.primary5.withOpacity(0.3),
-            width: 1,
+        ? SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(0, 1),
+        end: Offset.zero,
+      ).animate(CurvedAnimation(
+        parent: AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 300),
+        )..forward(),
+        curve: Curves.easeOutCubic,
+      )),
+          child: Material(
+                elevation: 20,
+                borderRadius: BorderRadius.circular(20),
+                shadowColor: AppColors.primary2.withOpacity(0.3),
+                child: Container(
+          width: 420,
+          height: 650,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.primary5.withOpacity(0.3),
+              width: 1,
+            ),
           ),
-        ),
-        child: ChatWidget(
-          key: ValueKey('chat_$conversationId'),
-          userId: widget.userId,
-          conversationId: conversationId,
-          apiBaseUrl: widget.apiBaseUrl,
-          conversationName: _getConversationName(conversationId),
-          onClose: () {
-            setState(() {
-              _selectedConversationId = null;
-            });
-          },
-          messageStream: _messageControllers[conversationId]?.stream,
-        ),
-      ),
-    )
+          child: ChatWidget(
+            key: ValueKey('chat_$conversationId'),
+            userId: widget.userId,
+            conversationId: conversationId,
+            apiBaseUrl: widget.apiBaseUrl,
+            conversationName: _getConversationName(conversationId),
+            onClose: () {
+              setState(() {
+                _selectedConversationId = null;
+              });
+            },
+            messageStream: _messageControllers[conversationId]?.stream,
+          ),
+                ),
+              ),
+        )
         : const SizedBox.shrink();
   }
 }

@@ -9,11 +9,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:html' as html;
 
-import 'package:whms/configs/config_cubit.dart'; // For web download
-
-void main() {
-  runApp(const MyApp());
-}
+import 'package:whms/configs/config_cubit.dart';
 
 class AppColors {
   static const Color primary1 = Color(0xFF0448db);
@@ -21,267 +17,6 @@ class AppColors {
   static const Color primary3 = Color(0xFF0086f3);
   static const Color primary4 = Color(0xFF0099d8);
   static const Color primary5 = Color(0xFFabc5ff);
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Chat Widget',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primaryColor: AppColors.primary2,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.primary2,
-          primary: AppColors.primary2,
-        ),
-        useMaterial3: true,
-      ),
-      home: const ChatDemo(),
-    );
-  }
-}
-
-class ChatDemo extends StatefulWidget {
-  const ChatDemo({super.key});
-
-  @override
-  State<ChatDemo> createState() => _ChatDemoState();
-}
-
-class _ChatDemoState extends State<ChatDemo> {
-  final userIdController = TextEditingController(text: 'think');
-  final conversationIdController = TextEditingController(text: 'g1');
-  final apiUrlController = TextEditingController(text: 'https://api.whms-uit.pls.edu.vn/api');
-  bool showChat = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.primary5.withOpacity(0.2),
-              AppColors.primary4.withOpacity(0.1),
-            ],
-          ),
-        ),
-        child: Center(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 650),
-            margin: const EdgeInsets.all(32),
-            child: Card(
-              elevation: 12,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(40),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [AppColors.primary2, AppColors.primary3],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.chat_bubble_rounded,
-                            color: Colors.white,
-                            size: 28,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Flutter Chat Widget',
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'Real-time messaging platform',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-                    _buildTextField(
-                      controller: apiUrlController,
-                      label: 'API Base URL',
-                      icon: Icons.link,
-                      hint: 'http://localhost:8000',
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      controller: userIdController,
-                      label: 'User ID',
-                      icon: Icons.person,
-                      hint: 'user_123',
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      controller: conversationIdController,
-                      label: 'Conversation ID',
-                      icon: Icons.chat,
-                      hint: 'conv_001',
-                    ),
-                    const SizedBox(height: 28),
-                    Container(
-                      height: 56,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppColors.primary2, AppColors.primary3],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary2.withOpacity(0.3),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(12),
-                          onTap: () {
-                            setState(() {
-                              showChat = !showChat;
-                            });
-                          },
-                          child: Center(
-                            child: Text(
-                              showChat ? 'Ẩn Chat Widget' : 'Mở Chat Widget',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary5.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.primary5.withOpacity(0.3),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(Icons.info_outline,
-                                  size: 18, color: AppColors.primary2),
-                              const SizedBox(width: 8),
-                              const Text(
-                                'Tính năng',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          _buildFeatureItem('✨ Real-time chat với WebSocket'),
-                          _buildFeatureItem('🖼️ Hiển thị ảnh như Messenger'),
-                          _buildFeatureItem('🎥 Preview & play video'),
-                          _buildFeatureItem('💬 Reply tin nhắn'),
-                          _buildFeatureItem('📎 Upload & download file'),
-                          _buildFeatureItem('🎨 UI hiện đại, mượt mà'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-      floatingActionButton: showChat
-          ? ChatWidget(
-        userId: userIdController.text,
-        conversationId: conversationIdController.text,
-        apiBaseUrl: apiUrlController.text,
-          conversationName: 'Test',
-        onClose: () {
-          setState(() {
-            showChat = false;
-          });
-        },
-      )
-          : null,
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    required String hint,
-  }) {
-    return TextField(
-      controller: controller,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixIcon: Icon(icon, color: AppColors.primary3),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary2, width: 2),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFeatureItem(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 13,
-          color: Colors.grey[700],
-        ),
-      ),
-    );
-  }
 }
 
 class ChatWidget extends StatefulWidget {
@@ -865,38 +600,34 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     if (isMinimized) {
-      return Positioned(
-        bottom: 20,
-        right: 20,
-        child: Container(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [AppColors.primary2, AppColors.primary3],
-            ),
-            borderRadius: BorderRadius.circular(30),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary2.withOpacity(0.4),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
+      return Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [AppColors.primary2, AppColors.primary3],
           ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(30),
-              onTap: () {
-                setState(() {
-                  isMinimized = false;
-                });
-                _slideController.forward();
-              },
-              child: const Padding(
-                padding: EdgeInsets.all(18),
-                child: Icon(Icons.chat_bubble_rounded,
-                    color: Colors.white, size: 28),
-              ),
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary2.withOpacity(0.4),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(30),
+            onTap: () {
+              setState(() {
+                isMinimized = false;
+              });
+              _slideController.forward();
+            },
+            child: const Padding(
+              padding: EdgeInsets.all(18),
+              child: Icon(Icons.chat_bubble_rounded,
+                  color: Colors.white, size: 28),
             ),
           ),
         ),
@@ -905,32 +636,28 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
 
     return SlideTransition(
       position: _slideAnimation,
-      child: Positioned(
-        bottom: 20,
-        right: 20,
-        child: Material(
-          elevation: 20,
-          borderRadius: BorderRadius.circular(20),
-          shadowColor: AppColors.primary2.withOpacity(0.3),
-          child: Container(
-            width: 420,
-            height: 650,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: AppColors.primary5.withOpacity(0.3),
-                width: 1,
-              ),
+      child: Material(
+        elevation: 20,
+        borderRadius: BorderRadius.circular(20),
+        shadowColor: AppColors.primary2.withOpacity(0.3),
+        child: Container(
+          width: 420,
+          height: 650,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: AppColors.primary5.withOpacity(0.3),
+              width: 1,
             ),
-            child: Column(
-              children: [
-                _buildHeader(),
-                Expanded(child: _buildMessagesList()),
-                if (replyingTo != null) _buildReplyPreview(),
-                _buildInputArea(),
-              ],
-            ),
+          ),
+          child: Column(
+            children: [
+              _buildHeader(),
+              Expanded(child: _buildMessagesList()),
+              if (replyingTo != null) _buildReplyPreview(),
+              _buildInputArea(),
+            ],
           ),
         ),
       ),
