@@ -5,8 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:whms/configs/color_config.dart';
+import 'package:whms/models/meeting_model.dart';
+import 'package:whms/untils/app_routes.dart';
+import 'package:whms/untils/scale_utils.dart';
 import 'package:whms/widgets/z_space.dart';
 import 'dart:js' as js;
+import 'package:go_router/go_router.dart';
 
 class ChatMessage {
   final String userId;
@@ -57,11 +61,11 @@ class Signaling {
   Signaling({required this.wsUrl, required this.userId}) : clientId = "";
 
   void Function(
-    String streamId,
-    MediaStream stream,
-    String? userId,
-    bool isScreen,
-  )?
+      String streamId,
+      MediaStream stream,
+      String? userId,
+      bool isScreen,
+      )?
   onAddRemoteStream;
   void Function(String streamId)? onRemoveRemoteStream;
   void Function()? onScreenShareEnded;
@@ -78,7 +82,7 @@ class Signaling {
   Future<void> start(String roomId) async {
     _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
     _channel!.stream.listen(
-      (message) {
+          (message) {
         final Map msg = jsonDecode(message);
         _handleMessage(msg);
       },
@@ -151,10 +155,10 @@ class Signaling {
   }
 
   bool _isScreenShareStream(
-    String peerId,
-    MediaStream stream,
-    MediaStreamTrack track,
-  ) {
+      String peerId,
+      MediaStream stream,
+      MediaStreamTrack track,
+      ) {
     final currentVideoCount = peerVideoStreamCount[peerId] ?? 0;
     if (currentVideoCount > 0 && track.kind == 'video') return true;
     final label = track.label?.toLowerCase() ?? '';
@@ -235,95 +239,56 @@ class Signaling {
         );
         await pc.setRemoteDescription(sdp);
         if ((await pc.getRemoteDescription()) == null) {
-          await pc.setRemoteDescription(sdp);
+          debugPrint('[PEER] Remote desc still null after setRemoteDescription');
+        } else {
           await _flushPendingCandidates(from, pc);
         }
       }
     } else if (type == 'ice' && msg['to'] == clientId) {
       final pc = pcs[from];
-      final c = RTCIceCandidate(
-        msg['candidate']['candidate'],
-        msg['candidate']['sdpMid'],
-        msg['candidate']['sdpMLineIndex'],
-      );
-      if (pc == null || (await pc.getRemoteDescription())?.sdp == null) {
-        pendingCandidates[from] = pendingCandidates[from] ?? [];
-        pendingCandidates[from]!.add(c);
-      } else {
-        try {
-          await pc.addCandidate(c);
-        } catch (e) {}
-      }
-    } else if (type == 'leave') {
-      await _cleanupPeer(from);
-      if (fromUserId != null) userToClient.remove(fromUserId);
-      clientToUser.remove(from);
-    } else if (type == 'stop_screen_share') {
-      final streamsToRemove = <String>[];
-      final screenStreamId = msg['screen_stream_id'];
-      peerToStreams[from]?.forEach((streamId) {
-        final isScreen = streamIsScreen[streamId] ?? false;
-        if (isScreen || (screenStreamId != null && streamId == screenStreamId))
-          streamsToRemove.add(streamId);
-      });
-      if (streamsToRemove.isEmpty && peerToStreams[from] != null) {
-        final videoStreams = peerToStreams[from]!.where((id) {
-          final s = remoteStreams[id];
-          return s != null && s.getVideoTracks().isNotEmpty;
-        }).toList();
-        if (videoStreams.length > 1)
-          for (int i = 1; i < videoStreams.length; i++)
-            streamsToRemove.add(videoStreams[i]);
-      }
-      for (var streamId in streamsToRemove) {
-        final stream = remoteStreams[streamId];
-        if (stream != null) {
-          for (var track in stream.getTracks()) {
-            try {
-              track.stop();
-            } catch (e) {}
-          }
-          if (stream.getVideoTracks().isNotEmpty)
-            peerVideoStreamCount[from] = max(
-              0,
-              (peerVideoStreamCount[from] ?? 1) - 1,
-            );
-        }
-        remoteStreams.remove(streamId);
-        streamToPeer.remove(streamId);
-        streamIsScreen.remove(streamId);
-        peerToStreams[from]?.remove(streamId);
-        onRemoveRemoteStream?.call(streamId);
-      }
-    }
-  }
-
-  Future<void> _cleanupPeer(String peerId) async {
-    final pc = pcs[peerId];
-    if (pc != null) {
-      try {
-        await pc.close();
-      } catch (e) {}
-      pcs.remove(peerId);
-    }
-    final streamIds = peerToStreams[peerId] ?? [];
-    for (var streamId in List<String>.from(streamIds)) {
-      final stream = remoteStreams[streamId];
-      if (stream != null) {
-        for (var track in stream.getTracks()) {
+      if (pc != null) {
+        final remoteDesc = await pc.getRemoteDescription();
+        final candidate = RTCIceCandidate(
+          msg['candidate']['candidate'],
+          msg['candidate']['sdpMid'],
+          msg['candidate']['sdpMLineIndex'],
+        );
+        if (remoteDesc != null) {
           try {
-            track.stop();
+            await pc.addCandidate(candidate);
           } catch (e) {}
+        } else {
+          pendingCandidates[from] = pendingCandidates[from] ?? [];
+          pendingCandidates[from]!.add(candidate);
         }
+      }
+    } else if (type == 'remove_stream') {
+      final streamId = msg['stream_id'];
+      if (streamId != null) {
+        onRemoveRemoteStream?.call(streamId);
         remoteStreams.remove(streamId);
         streamToPeer.remove(streamId);
         streamIsScreen.remove(streamId);
-        onRemoveRemoteStream?.call(streamId);
+        final pId = msg['from'];
+        if (pId != null && peerToStreams.containsKey(pId)) {
+          peerToStreams[pId]?.remove(streamId);
+          if (peerToStreams[pId]?.isEmpty == true)
+            peerToStreams.remove(pId);
+        }
+      }
+    } else if (type == 'stop_screen_share') {
+      final screenStreamId = msg['screen_stream_id'];
+      if (screenStreamId != null && remoteStreams.containsKey(screenStreamId)) {
+        onRemoveRemoteStream?.call(screenStreamId);
+        remoteStreams.remove(screenStreamId);
+        streamToPeer.remove(screenStreamId);
+        streamIsScreen.remove(screenStreamId);
+        final pId = msg['from'];
+        if (pId != null && peerToStreams.containsKey(pId)) {
+          peerToStreams[pId]?.remove(screenStreamId);
+        }
       }
     }
-    peerToStreams.remove(peerId);
-    peerVideoStreamCount.remove(peerId);
-    pendingCandidates.remove(peerId);
   }
 
   Future<RTCPeerConnection> _createPeerConnectionOnly(String peerId) async {
@@ -347,11 +312,11 @@ class Signaling {
         });
     };
     pc.onTrack = (event) {
-      if (event.streams.isNotEmpty) {
-        final stream = event.streams[0];
-        final streamId = stream.id;
-        final track = event.track;
-        final isScreen = _isScreenShareStream(peerId, stream, track);
+      final track = event.track;
+      final stream = event.streams.first;
+      final streamId = stream.id;
+      final isScreen = _isScreenShareStream(peerId, stream, track);
+      if (!remoteStreams.containsKey(streamId)) {
         remoteStreams[streamId] = stream;
         streamToPeer[streamId] = peerId;
         streamIsScreen[streamId] = isScreen;
@@ -365,55 +330,46 @@ class Signaling {
         onAddRemoteStream?.call(streamId, stream, peerUserId, isScreen);
       }
     };
-    pc.onConnectionState = (state) {
-      if (state == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
-          state == RTCPeerConnectionState.RTCPeerConnectionStateClosed)
-        _cleanupPeer(peerId);
-    };
     pcs[peerId] = pc;
     return pc;
   }
 
   void _send(Map data) {
-    try {
-      _channel?.sink.add(jsonEncode(data));
-    } catch (e) {}
+    if (_channel != null) _channel!.sink.add(jsonEncode(data));
   }
 
-  Future<void> toggleMicrophone(bool enabled) async {
-    localStream?.getAudioTracks().forEach((t) => t.enabled = enabled);
+  Future<void> toggleMicrophone(bool enable) async {
+    if (localStream == null) return;
+    for (var track in localStream!.getAudioTracks()) {
+      track.enabled = enable;
+    }
   }
 
-  Future<void> toggleCamera(bool enabled) async {
-    localStream?.getVideoTracks().forEach((t) => t.enabled = enabled);
+  Future<void> toggleCamera(bool enable) async {
+    if (localStream == null) return;
+    for (var track in localStream!.getVideoTracks()) {
+      track.enabled = enable;
+    }
   }
 
   Future<void> startScreenShare() async {
-    try {
-      screenStream = await navigator.mediaDevices.getDisplayMedia({
-        'video': true,
-        'audio': false,
-      });
-      final screenTrack = screenStream!.getVideoTracks().first;
-      for (final entry in pcs.entries) {
-        final pc = entry.value;
-        await pc.addTrack(screenTrack, screenStream!);
-        final offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        final localDesc = await pc.getLocalDescription();
+    final mediaConstraints = {'video': true};
+    screenStream =
+    await navigator.mediaDevices.getDisplayMedia(mediaConstraints);
+    for (var peerId in pcs.keys) {
+      final pc = pcs[peerId];
+      if (pc != null)
+        screenStream!.getTracks().forEach((t) => pc.addTrack(t, screenStream!));
+      final offer = await pc!.createOffer();
+      await pc.setLocalDescription(offer);
+      final localDesc = await pc.getLocalDescription();
+      if (localDesc != null)
         _send({
           'type': 'offer',
-          'to': entry.key,
+          'to': peerId,
           'from': clientId,
-          'sdp': localDesc?.toMap(),
+          'sdp': localDesc.toMap(),
         });
-      }
-      screenTrack.onEnded = () async {
-        await stopScreenShare();
-      };
-    } catch (e) {
-      screenStream = null;
-      rethrow;
     }
   }
 
@@ -421,12 +377,12 @@ class Signaling {
     if (screenStream == null) return;
     final screenStreamId = screenStream!.id;
     for (var track in screenStream!.getTracks()) track.stop();
-    for (final entry in pcs.entries) {
-      final peerId = entry.key;
-      final pc = entry.value;
-      final senders = await pc.getSenders();
+    for (var peerId in pcs.keys) {
+      final pc = pcs[peerId];
+      if (pc == null) continue;
       bool removed = false;
-      for (final sender in senders) {
+      final senders = await pc.getSenders();
+      for (var sender in senders) {
         if (sender.track != null &&
             screenStream!.getTracks().any((t) => t.id == sender.track!.id)) {
           await pc.removeTrack(sender);
@@ -458,9 +414,9 @@ class Signaling {
   }
 
   Future<void> _flushPendingCandidates(
-    String peerId,
-    RTCPeerConnection pc,
-  ) async {
+      String peerId,
+      RTCPeerConnection pc,
+      ) async {
     final list = pendingCandidates[peerId];
     if (list == null || list.isEmpty) return;
     for (var c in List<RTCIceCandidate>.from(list)) {
@@ -498,7 +454,7 @@ class Signaling {
 class VideoCallPage extends StatefulWidget {
   final String roomId;
   final String userId;
-  final dynamic meetingInfo;
+  final MeetingModel? meetingInfo;
   final Future<String> Function(String userId)? getUserName;
   final Future<String> Function(String userId)? getUserAvatar;
 
@@ -533,18 +489,32 @@ class _VideoCallPageState extends State<VideoCallPage> {
   @override
   void initState() {
     super.initState();
-    _localRenderer.initialize();
     _initSignaling();
   }
 
   Future<void> _initSignaling() async {
+    // Initialize local renderer first
+    await _localRenderer.initialize();
+
     signaling = Signaling(
       wsUrl: "wss://api.whms-uit.pls.edu.vn/call/ws/${widget.roomId}/${widget.userId}",
       userId: widget.userId,
     );
-    await signaling!.initLocalStream();
-    _localRenderer.srcObject = signaling!.localStream;
+
+    // Initialize local stream with video and audio enabled
+    await signaling!.initLocalStream(audio: true, video: true);
+
+    // Wait a bit to ensure stream is ready, then set srcObject
+    await Future.delayed(Duration(milliseconds: 100));
+
+    if (mounted && signaling!.localStream != null) {
+      setState(() {
+        _localRenderer.srcObject = signaling!.localStream;
+      });
+    }
+
     await signaling!.start(widget.roomId);
+
     signaling!.onAddRemoteStream = (streamId, stream, userId, isScreen) async {
       if (_remoteRenderers.containsKey(streamId)) return;
       final renderer = RTCVideoRenderer();
@@ -752,31 +722,69 @@ class _VideoCallPageState extends State<VideoCallPage> {
   }
 
   Future<String> getNameByStreamId(String streamId) async {
-    if (streamId == widget.userId) return 'You';
+    if (streamId == widget.userId) {
+      if (widget.getUserName != null) {
+        try {
+          return await widget.getUserName!(widget.userId);
+        } catch (e) {}
+      }
+      return 'You';
+    }
     final userId = _rendererToUserId[streamId];
-    final isScreen = _rendererIsScreen[streamId] ?? false;
-    if (userId == null)
-      return isScreen ? 'Screen: User $streamId' : 'User $streamId';
-    String name = 'User $userId';
-    if (widget.getUserName != null) {
+    if (userId != null && widget.getUserName != null) {
       try {
-        name = await widget.getUserName!(userId);
+        return await widget.getUserName!(userId);
       } catch (e) {}
     }
-    return isScreen ? 'Screen: $name' : name;
+    return userId ?? 'Unknown';
   }
 
   Future<String> getAvatarByStreamId(String streamId) async {
-    final userId = _rendererToUserId[streamId];
-    if (userId == null)
-      return 'https://ui-avatars.com/api/?name=User&background=random';
-    if (widget.getUserAvatar != null) {
+    String? userId;
+    if (streamId == widget.userId) {
+      userId = widget.userId;
+    } else {
+      userId = _rendererToUserId[streamId];
+    }
+    if (userId != null && widget.getUserAvatar != null) {
       try {
         return await widget.getUserAvatar!(userId);
       } catch (e) {}
     }
-    final name = await getNameByStreamId(streamId);
-    return 'https://ui-avatars.com/api/?name=$name&background=random';
+    return '';
+  }
+
+  Widget _buildControlButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    bool isActive = false,
+    Color? color,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(30),
+        child: Container(
+          width: 50,
+          height: 50,
+          decoration: BoxDecoration(
+            color: color ??
+                (isActive ? ColorConfig.primary3 : Colors.white.withOpacity(0.2)),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: Colors.white.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Icon(
+            icon,
+            color: Colors.white,
+            size: 24,
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -784,51 +792,172 @@ class _VideoCallPageState extends State<VideoCallPage> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: Text(widget.meetingInfo?.title ?? 'Meeting'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
-            child: Center(
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.people, size: 16),
-                    SizedBox(width: 4),
-                    Text(
-                      '${_remoteRenderers.keys.where((key) => !(_rendererIsScreen[key] ?? false)).length + 1}',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
+        backgroundColor: Colors.black87,
+        actionsPadding: EdgeInsets.symmetric(horizontal: ScaleUtils.scaleSize(20, context)),
+        title: Row(
+          children: [
+            Icon(Icons.videocam, color: ColorConfig.primary3),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.meetingInfo?.title ?? 'Cuộc họp',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white
                     ),
-                  ],
-                ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.people, size: 14, color: Colors.green),
+                        SizedBox(width: 4),
+                        Text(
+                          '${_remoteRenderers.keys.where((key) => !(_rendererIsScreen[key] ?? false)).length + 1}',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.green,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert),
-            onSelected: (value) {
-              if (value == 'leave') Navigator.of(context).pop();
+          ],
+        ),
+        actions: [
+          // Microphone button
+          IconButton(
+            icon: Icon(
+              isOnMic ? Icons.mic : Icons.mic_off,
+              color: isOnMic ? Colors.white : Colors.red,
+            ),
+            onPressed: () {
+              signaling?.toggleMicrophone(!isOnMic);
+              setState(() => isOnMic = !isOnMic);
             },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'leave',
-                child: Row(
-                  children: [
-                    Icon(Icons.exit_to_app, size: 20, color: Colors.red),
-                    SizedBox(width: 8),
-                    Text('Rời khỏi', style: TextStyle(color: Colors.red)),
-                  ],
-                ),
+            tooltip: isOnMic ? 'Tắt mic' : 'Bật mic',
+          ),
+
+          // Camera button
+          IconButton(
+            icon: Icon(
+              isOnCam ? Icons.videocam : Icons.videocam_off,
+              color: isOnCam ? Colors.white : Colors.red,
+            ),
+            onPressed: () {
+              signaling?.toggleCamera(!isOnCam);
+              setState(() => isOnCam = !isOnCam);
+            },
+            tooltip: isOnCam ? 'Tắt camera' : 'Bật camera',
+          ),
+
+          // Screen share button
+          IconButton(
+            icon: Icon(
+              isSharingScreen ? Icons.stop_screen_share : Icons.screen_share,
+              color: isSharingScreen ? Colors.green : Colors.white,
+            ),
+            onPressed: () async {
+              if (isSharingScreen) {
+                await signaling?.stopScreenShare();
+                setState(() => isSharingScreen = false);
+              } else {
+                try {
+                  await signaling?.startScreenShare();
+                  setState(() => isSharingScreen = true);
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Không thể chia sẻ màn hình'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
+              }
+            },
+            tooltip: isSharingScreen ? 'Dừng chia sẻ' : 'Chia sẻ màn hình',
+          ),
+
+          // Chat button
+          Stack(
+            children: [
+              IconButton(
+                icon: Icon(Icons.chat, color: showChat ? ColorConfig.primary3 : Colors.white),
+                onPressed: () {
+                  setState(() {
+                    showChat = !showChat;
+                    if (showChat) {
+                      unreadChatCount = 0;
+                      Future.delayed(Duration(milliseconds: 100), () {
+                        _scrollToBottom();
+                      });
+                    }
+                  });
+                },
+                tooltip: 'Chat',
               ),
+              if (unreadChatCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: BoxConstraints(
+                      minWidth: 18,
+                      minHeight: 18,
+                    ),
+                    child: Center(
+                      child: Text(
+                        unreadChatCount > 9 ? '9+' : unreadChatCount.toString(),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
+          ),
+
+          // Recording button
+          IconButton(
+            icon: Icon(
+              isRecording ? Icons.stop_circle : Icons.fiber_manual_record,
+              color: isRecording ? Colors.red : Colors.white,
+            ),
+            onPressed: _toggleRecording,
+            tooltip: isRecording ? 'Dừng ghi' : 'Ghi hình',
+          ),
+
+          // End call button
+          IconButton(
+            icon: Icon(Icons.call_end, color: Colors.red),
+            onPressed: () {
+              context.go('${AppRoutes.home}/mainTab/4&id=${widget.roomId}');
+            },
+            tooltip: 'Kết thúc',
           ),
         ],
       ),
@@ -984,118 +1113,9 @@ class _VideoCallPageState extends State<VideoCallPage> {
                 ),
               ),
             ),
-          Positioned(
-            bottom: 20,
-            left: 0,
-            right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildControlButton(
-                  icon: isOnMic ? Icons.mic : Icons.mic_off,
-                  onTap: () {
-                    signaling?.toggleMicrophone(!isOnMic);
-                    setState(() => isOnMic = !isOnMic);
-                  },
-                  isActive: isOnMic,
-                ),
-                const ZSpace(w: 9),
-                _buildControlButton(
-                  icon: isOnCam ? Icons.videocam : Icons.videocam_off,
-                  onTap: () {
-                    signaling?.toggleCamera(!isOnCam);
-                    setState(() => isOnCam = !isOnCam);
-                  },
-                  isActive: isOnCam,
-                ),
-                const ZSpace(w: 9),
-                _buildControlButton(
-                  icon: isSharingScreen
-                      ? Icons.stop_screen_share
-                      : Icons.screen_share,
-                  onTap: () async {
-                    if (isSharingScreen) {
-                      await signaling?.stopScreenShare();
-                      setState(() => isSharingScreen = false);
-                    } else {
-                      try {
-                        await signaling?.startScreenShare();
-                        setState(() => isSharingScreen = true);
-                      } catch (e) {}
-                    }
-                  },
-                  isActive: isSharingScreen,
-                  color: isSharingScreen ? Colors.green : null,
-                ),
-                const ZSpace(w: 9),
-                Stack(
-                  children: [
-                    _buildControlButton(
-                      icon: Icons.chat,
-                      onTap: () {
-                        setState(() {
-                          showChat = !showChat;
-                          if (showChat) {
-                            unreadChatCount = 0;
-                            Future.delayed(Duration(milliseconds: 100), () {
-                              _scrollToBottom();
-                            });
-                          }
-                        });
-                      },
-                      isActive: showChat,
-                    ),
-                    if (unreadChatCount > 0)
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: Container(
-                          padding: EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                          ),
-                          constraints: BoxConstraints(
-                            minWidth: 20,
-                            minHeight: 20,
-                          ),
-                          child: Center(
-                            child: Text(
-                              unreadChatCount > 99
-                                  ? '99+'
-                                  : unreadChatCount.toString(),
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const ZSpace(w: 9),
-                _buildControlButton(
-                  icon: isRecording
-                      ? Icons.stop_circle
-                      : Icons.fiber_manual_record,
-                  onTap: _toggleRecording,
-                  isActive: isRecording,
-                  color: isRecording ? Colors.red : null,
-                ),
-                const ZSpace(w: 9),
-                _buildControlButton(
-                  icon: Icons.call_end,
-                  onTap: () => Navigator.of(context).pop(),
-                  color: Colors.red,
-                ),
-              ],
-            ),
-          ),
           if (isRecording)
             Positioned(
-              top: 80,
+              top: 16,
               left: 16,
               child: Container(
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -1116,11 +1136,11 @@ class _VideoCallPageState extends State<VideoCallPage> {
                     ),
                     SizedBox(width: 8),
                     Text(
-                      'Recording',
+                      'Đang ghi hình',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 13,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -1128,35 +1148,6 @@ class _VideoCallPageState extends State<VideoCallPage> {
               ),
             ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildControlButton({
-    required IconData icon,
-    required VoidCallback onTap,
-    bool isActive = false,
-    Color? color,
-  }) {
-    return InkWell(
-      hoverColor: Colors.transparent,
-      splashColor: Colors.transparent,
-      highlightColor: Colors.transparent,
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: color ?? (isActive ? Colors.white : Color(0xFFEBEBEB)),
-          boxShadow: const [ColorConfig.boxShadow2],
-        ),
-        padding: EdgeInsets.all(12),
-        child: Icon(
-          icon,
-          color: color != null
-              ? Colors.white
-              : (isActive ? Colors.blue : Colors.black87),
-          size: 24,
-        ),
       ),
     );
   }
@@ -1179,54 +1170,48 @@ class MeetLayout extends StatelessWidget {
     required this.userId,
     required this.getNameByStreamId,
     required this.getAvatarByStreamId,
-    this.isLocalCameraOn = true,
+    required this.isLocalCameraOn,
   });
 
   @override
   Widget build(BuildContext context) {
-    final screenShares = <String, RTCVideoRenderer>{};
-    final cameraStreams = <String, RTCVideoRenderer>{};
+    Map<String, RTCVideoRenderer> allCameras = {userId: localRenderer};
+    Map<String, RTCVideoRenderer> allScreens = {};
     remoteRenderers.forEach((key, value) {
-      if (rendererIsScreen[key] ?? false)
-        screenShares[key] = value;
-      else
-        cameraStreams[key] = value;
+      if (rendererIsScreen[key] == true) {
+        allScreens[key] = value;
+      } else {
+        allCameras[key] = value;
+      }
     });
-    if (screenShares.isNotEmpty)
-      return _buildScreenShareLayout(context, screenShares, cameraStreams);
-    final allCameras = {userId: localRenderer, ...cameraStreams};
-    return _buildGridLayout(context, allCameras);
+    if (allScreens.isEmpty) {
+      return _buildGridLayout(context, allCameras);
+    } else {
+      return _buildSpeakerLayout(context, allCameras, allScreens);
+    }
   }
 
-  Widget _buildScreenShareLayout(
-    BuildContext context,
-    Map<String, RTCVideoRenderer> screenShares,
-    Map<String, RTCVideoRenderer> cameraStreams,
-  ) {
-    final allCameras = {userId: localRenderer, ...cameraStreams};
+  Widget _buildSpeakerLayout(
+      BuildContext context,
+      Map<String, RTCVideoRenderer> allCameras,
+      Map<String, RTCVideoRenderer> allScreens,
+      ) {
     return Column(
       children: [
         Expanded(
           flex: 7,
           child: Container(
             color: Colors.black,
-            child: Center(
-              child: AspectRatio(
-                aspectRatio: 16 / 9,
-                child: screenShares.entries.first.value.srcObject != null
-                    ? RTCVideoView(
-                        screenShares.entries.first.value,
-                        objectFit:
-                            RTCVideoViewObjectFit.RTCVideoViewObjectFitContain,
-                      )
-                    : Container(
-                        color: Colors.grey[900],
-                        child: Icon(
-                          Icons.screen_share,
-                          size: 64,
-                          color: Colors.white38,
-                        ),
-                      ),
+            child: allScreens.entries.isNotEmpty
+                ? RTCVideoView(
+              allScreens.values.first,
+              objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitContain,
+            )
+                : Center(
+              child: Icon(
+                Icons.screen_share,
+                size: 64,
+                color: Colors.white38,
               ),
             ),
           ),
@@ -1277,7 +1262,7 @@ class MeetLayout extends StatelessWidget {
                       renderer,
                       mirror: isLocal,
                       objectFit:
-                          RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                      RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                     ),
                   )
                 else
@@ -1333,9 +1318,9 @@ class MeetLayout extends StatelessWidget {
   }
 
   Widget _buildGridLayout(
-    BuildContext context,
-    Map<String, RTCVideoRenderer> allCameras,
-  ) {
+      BuildContext context,
+      Map<String, RTCVideoRenderer> allCameras,
+      ) {
     final total = allCameras.length;
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -1389,7 +1374,7 @@ class MeetLayout extends StatelessWidget {
                         renderer,
                         mirror: isLocal,
                         objectFit:
-                            RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                        RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
                       ),
                     )
                   else
