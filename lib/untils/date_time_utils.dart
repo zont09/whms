@@ -243,23 +243,62 @@ class DateTimeUtils {
   }
 
   static Future<DateTime?> pickTimeAndDate(BuildContext ctx, {DateTime? initDate}) async {
-    return picker.DatePicker.showDateTimePicker(
-      ctx,
-      showTitleActions: true,
-      minTime: DateTime(2000, 1, 1), // Ngày tối thiểu có thể chọn
-      maxTime: DateTime(2100, 12, 31), // Ngày tối đa có thể chọn
-      currentTime: initDate ?? DateTime.now(), // Ngày và giờ hiện tại được chọn mặc định
-      locale: picker.LocaleType.vi, // Ngôn ngữ (tiếng Việt)
-      onConfirm: (date) {
-        print('Ngày và giờ đã chọn: $date');
+    final DateTime? pickedDate = await showDatePicker(
+      context: ctx,
+      initialDate: initDate ?? DateTime.now(),
+      firstDate: DateTime(2000, 1, 1),
+      lastDate: DateTime(2100, 12, 31),
+      locale: const Locale('vi', 'VN'),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: ColorConfig.primary3,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+            ),
+            textTheme: TextTheme(
+              bodyLarge: TextStyle(
+                color: ColorConfig.primary3,
+                fontSize: ScaleUtils.scaleSize(16, ctx),
+              ),
+            ),
+          ),
+          child: child!,
+        );
       },
-      theme: picker.DatePickerTheme(
-        backgroundColor: Colors.white,
-        itemStyle: TextStyle(color: ColorConfig.primary3, fontSize: ScaleUtils.scaleSize(16, ctx)),
-        doneStyle: TextStyle(color: ColorConfig.primary3, fontSize: ScaleUtils.scaleSize(16, ctx)),
-        cancelStyle: TextStyle(color: ColorConfig.primary3, fontSize: ScaleUtils.scaleSize(16, ctx)),
-      ),
     );
+
+    if (pickedDate != null) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: ctx,
+        initialTime: TimeOfDay.fromDateTime(initDate ?? DateTime.now()),
+        builder: (context, child) {
+          return Theme(
+            data: Theme.of(context).copyWith(
+              colorScheme: ColorScheme.light(
+                primary: ColorConfig.primary3,
+                onPrimary: Colors.white,
+                surface: Colors.white,
+              ),
+            ),
+            child: child!,
+          );
+        },
+      );
+
+      if (pickedTime != null) {
+        return DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+      }
+    }
+
+    return null;
   }
 
   static bool isSameDay(DateTime a, DateTime b) {

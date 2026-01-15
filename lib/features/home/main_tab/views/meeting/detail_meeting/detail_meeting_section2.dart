@@ -1,3 +1,4 @@
+import 'package:whms/features/home/main_tab/widgets/meeting/meeting_text_field.dart';
 import 'package:whms/features/manager/widgets/scope_tab/scope_choose_member_popup.dart';
 import 'package:whms/untils/app_text.dart';
 import 'package:whms/configs/color_config.dart';
@@ -59,6 +60,33 @@ class DetailMeetingSection2 extends StatelessWidget {
         //   fontSize: 16,
         //   fontWeight: FontWeight.w400,
         // ),
+        const ZSpace(h: 9),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text("${AppText.titleMeetingLocation.text}:",
+                style: TextStyle(
+                    fontSize: ScaleUtils.scaleSize(14, context),
+                    fontWeight: FontWeight.w600,
+                    color: ColorConfig.textColor,
+                    height: 1,
+                    letterSpacing: -0.33)),
+            const ZSpace(w: 3),
+            Expanded(
+              child: MeetingTextField(
+                meeting: meeting,
+                controller: TextEditingController(text: meeting.location.isNotEmpty ? meeting.location : "Online"),
+                onUpdate: (v) {
+                  cubit.updateMeeting(meeting.copyWith(location: v));
+                  cubitM.updateMeeting(meeting.copyWith(location: v));
+                },
+                hint: AppText.textHintTypingMeetingLocation.text,
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
         const ZSpace(h: 9),
         Wrap(
           direction: Axis.horizontal,

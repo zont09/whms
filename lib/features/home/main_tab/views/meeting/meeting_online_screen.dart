@@ -213,11 +213,11 @@ class _MeetingJoinPageState extends State<MeetingJoinPage> {
             ),
             textAlign: TextAlign.center,
           ),
-          SizedBox(height: 8),
-          Text(
-            'Room ID: ${widget.roomId}',
-            style: TextStyle(color: Colors.white60, fontSize: 14),
-          ),
+          // SizedBox(height: 8),
+          // Text(
+          //   'Room ID: ${widget.roomId}',
+          //   style: TextStyle(color: Colors.white60, fontSize: 14),
+          // ),
         ],
       ),
     );
@@ -278,13 +278,13 @@ class _MeetingJoinPageState extends State<MeetingJoinPage> {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  if (_meeting!.description.isNotEmpty) ...[
-                    SizedBox(height: 8),
-                    Text(
-                      _meeting!.description,
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
-                    ),
-                  ],
+                  // if (_meeting!.description.isNotEmpty) ...[
+                  //   SizedBox(height: 8),
+                  //   Text(
+                  //     _meeting!.description,
+                  //     style: TextStyle(color: Colors.white70, fontSize: 14),
+                  //   ),
+                  // ],
                 ],
               ),
             ),

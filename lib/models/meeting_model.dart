@@ -4,6 +4,7 @@ class MeetingModel {
   final String id;
   final String title;
   final String description;
+  final String location;
   final List<String> members;
   final List<String> sections;
   final List<String> minutes;
@@ -20,6 +21,7 @@ class MeetingModel {
     this.id = "",
     this.title = "",
     this.description = "",
+    this.location = "",
     this.members = const [],
     this.sections = const [],
     this.minutes = const [],
@@ -38,6 +40,7 @@ class MeetingModel {
     id: json['id'] ?? "",
     title: json['title'] ?? "",
     description: json['description'] ?? "",
+    location: json['location'] ?? "",
     members: json['members'] != null ? List<String>.from(json['members']) : [],
     sections: json['sections'] != null ? List<String>.from(json['sections']) : [],
     minutes: json['minutes'] != null ? List<String>.from(json['minutes']) : [],
@@ -57,6 +60,7 @@ class MeetingModel {
       id: data['id'] ?? "",
       title: data['title'] ?? "",
       description: data['description'] ?? "",
+      location: data['location'] ?? "",
       members: data['members'] != null ? List<String>.from(data['members']) : [],
       sections: data['sections'] != null ? List<String>.from(data['sections']) : [],
       minutes: data['minutes'] != null ? List<String>.from(data['minutes']) : [],
@@ -75,6 +79,7 @@ class MeetingModel {
     'id': id,
     'title': title,
     'description': description,
+    'location': location,
     'members': members,
     'sections': sections,
     'minutes': minutes,
@@ -92,6 +97,7 @@ class MeetingModel {
     String? id,
     String? title,
     String? description,
+    String? location,
     List<String>? members,
     List<String>? sections,
     List<String>? minutes,
@@ -108,6 +114,7 @@ class MeetingModel {
       id: id ?? this.id,
       title: title ?? this.title,
       description: description ?? this.description,
+      location: location ?? this.location,
       members: members ?? this.members,
       sections: sections ?? this.sections,
       minutes: minutes ?? this.minutes,
@@ -126,6 +133,7 @@ class MeetingModel {
     'id': id,
     'title': title,
     'description': description,
+    'location': location,
     'members': members,
     'sections': sections,
     'minutes': minutes,
@@ -144,6 +152,7 @@ class MeetingModel {
 
     if (obj1.title != obj2.title) differences['title'] = obj2.title;
     if (obj1.description != obj2.description) differences['description'] = obj2.description;
+    if (obj1.location != obj2.location) differences['location'] = obj2.location;
     if (!listEquals(obj1.members, obj2.members)) differences['members'] = obj2.members;
     if (!listEquals(obj1.sections, obj2.sections)) differences['sections'] = obj2.sections;
     if (!listEquals(obj1.minutes, obj2.minutes)) differences['minutes'] = obj2.minutes;
