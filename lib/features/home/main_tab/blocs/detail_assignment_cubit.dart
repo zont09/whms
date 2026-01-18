@@ -240,7 +240,9 @@ class DetailAssignCubit extends Cubit<int> {
     //   ownerId: cfC.user.id,
     //   context: context, path: path,
     // );
-    cfC.updateWorkingUnit(wu.copyWith(assignees: members), wu);
+    debugPrint("[THINK] ====> update member: ${members} - ${wu.assignees}");
+    cfC.updateWorkingUnit(wu.copyWith(assignees: members), wu.copyWith());
+    debugPrint("[THINK] ====> here");
     // await _workingService.updateWorkingUnitField(
     //     wu.copyWith(assignees: members), wu, user.id);
     if (wu.type == TypeAssignmentDefine.task.title) {

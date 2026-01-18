@@ -501,6 +501,7 @@ class ConfigsCubit extends Cubit<ConfigsState> {
     updateWorkingUnit(WorkingUnitModel model, WorkingUnitModel oldModel,
         {bool isLocalUpdate = false}) async {
       final diff = WorkingUnitModel.getDifferentFields(model, oldModel);
+      debugPrint("[THINK] ====> update wu diff: $diff");
       if (diff.isEmpty) return;
       if (!isLocalUpdate) {
         _workingService.updateWorkingUnitField(model, oldModel, user.id);
