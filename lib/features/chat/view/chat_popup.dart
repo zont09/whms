@@ -58,6 +58,9 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
   final Map<String, GlobalKey> _messageKeys = {};
   StreamSubscription<Map<String, dynamic>>? _messageSubscription;
 
+  // ✅ THÊM: Set để track message IDs đã được thêm, tránh duplicate tuyệt đối
+  final Set<String> _processedMessageIds = {};
+
   @override
   void initState() {
     super.initState();
@@ -94,6 +97,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
     _focusNode.dispose();
     _messageKeys.clear();
     _messageSubscription?.cancel();
+    _processedMessageIds.clear();
     super.dispose();
   }
 
@@ -119,8 +123,11 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
         if (data['ok'] == true && data['messages'] != null) {
           setState(() {
             messages.clear();
+            _processedMessageIds.clear(); // ✅ Clear set khi load lại
             for (var msg in data['messages']) {
-              messages.add(ChatMessage.fromJson(msg));
+              final message = ChatMessage.fromJson(msg);
+              messages.add(message);
+              _processedMessageIds.add(message.id); // ✅ Track message ID
             }
           });
           scrollToBottom();
@@ -131,9 +138,6 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
     }
   }
 
-  // Phần cần sửa trong _ChatWidgetState
-
-// 1. Sửa hàm connectWebSocket - tránh duplicate listener
   void connectWebSocket() {
     try {
       // Nếu có channel từ parent (MultiChatManager), sử dụng nó
@@ -177,9 +181,13 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
               final newMsg = ChatMessage.fromJson(data['message']);
               if (mounted) {
                 setState(() {
-                  if (!messages.any((m) => m.id == newMsg.id)) {
+                  // ✅ SỬA: Dùng Set để check duplicate nhanh hơn
+                  if (!_processedMessageIds.contains(newMsg.id)) {
                     messages.add(newMsg);
+                    _processedMessageIds.add(newMsg.id);
                     print('✅ Added new message: ${newMsg.id}');
+                  } else {
+                    print('⚠️ Duplicate message detected in WebSocket, skipped: ${newMsg.id}');
                   }
                 });
                 scrollToBottom();
@@ -226,11 +234,13 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
             final newMsg = ChatMessage.fromJson(messageData);
             if (mounted) {
               setState(() {
-                if (!messages.any((m) => m.id == newMsg.id)) {
+                // ✅ SỬA: Dùng Set để check duplicate - nhanh và chính xác
+                if (!_processedMessageIds.contains(newMsg.id)) {
                   messages.add(newMsg);
+                  _processedMessageIds.add(newMsg.id);
                   print('✅ Added message to UI: ${newMsg.id} from ${newMsg.senderId}');
                 } else {
-                  print('⚠️ Duplicate message, skipping: ${newMsg.id}');
+                  print('⚠️ Duplicate message detected in stream, skipped: ${newMsg.id}');
                 }
               });
               scrollToBottom();
@@ -248,10 +258,6 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
     }
   }
 
-// 2. Sửa hàm sendMessage - thêm tin nhắn ngay vào UI (optimistic update)
-
-
-// 4. Sửa phần hiển thị trạng thái kết nối trong _buildInputArea
   Widget _buildInputArea() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -426,40 +432,30 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
     final content = messageController.text.trim();
     final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
 
-    // Tạo tin nhắn tạm thời để hiển thị ngay
-    final tempMessage = ChatMessage(
-      id: tempId,
-      conversationId: widget.conversationId,
-      senderId: widget.userId,
-      content: content,
-      attachments: [],
-      createdAt: DateTime.now().toIso8601String(),
-      replyTo: replyingTo?.id,
-    );
+    // ✅ SỬA: KHÔNG thêm tin nhắn tạm vào UI nữa
+    // Chỉ lưu lại replyTo và clear input
+    final currentReplyTo = replyingTo?.id;
 
-    // Thêm tin nhắn tạm vào UI ngay lập tức
     setState(() {
-      // messages.add(tempMessage);
       replyingTo = null;
     });
 
     messageController.clear();
-    scrollToBottom();
 
-    // Gửi qua WebSocket
+    // Gửi qua WebSocket - server sẽ broadcast lại và UI sẽ nhận từ messageStream
     final messageData = {
       'type': 'message',
       'sender_id': widget.userId,
       'content': content,
       'attachments': [],
-      if (replyingTo != null) 'reply_to': replyingTo!.id,
+      if (currentReplyTo != null) 'reply_to': currentReplyTo,
     };
 
     print('Sending message: ${json.encode(messageData)}');
     channel!.sink.add(json.encode(messageData));
   }
 
-// 3. Sửa hàm uploadFile - tương tự optimistic update
+  // ✅ SỬA: Sửa hàm uploadFile - không thêm tin nhắn tạm nữa
   Future<void> uploadFile() async {
     try {
       print('=== Starting file upload ===');
@@ -496,34 +492,14 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
           print('Upload successful! File ID: ${data['file_id']}, URL: ${data['url']}');
 
           final isMedia = _isImageFile(data['mime']) || _isVideoFile(data['mime']);
+          final currentReplyTo = replyingTo?.id;
 
-          // Tạo tin nhắn tạm để hiển thị ngay
-          final tempId = 'temp_${DateTime.now().millisecondsSinceEpoch}';
-          final tempMessage = ChatMessage(
-            id: tempId,
-            conversationId: widget.conversationId,
-            senderId: widget.userId,
-            content: isMedia ? '' : '📎 ${data['filename']}',
-            attachments: [
-              {
-                'file_id': data['file_id'],
-                'filename': data['filename'],
-                'mime': data['mime'],
-                'url': data['url'],
-              }
-            ],
-            createdAt: DateTime.now().toIso8601String(),
-            replyTo: replyingTo?.id,
-          );
-
-          // Thêm vào UI ngay
+          // ✅ SỬA: KHÔNG thêm tin nhắn tạm vào UI
           setState(() {
-            messages.add(tempMessage);
             replyingTo = null;
           });
-          scrollToBottom();
 
-          // Gửi qua WebSocket
+          // Gửi qua WebSocket - server sẽ broadcast và UI sẽ nhận từ messageStream
           final messageData = {
             'type': 'message',
             'sender_id': widget.userId,
@@ -536,7 +512,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                 'url': data['url'],
               }
             ],
-            if (replyingTo != null) 'reply_to': replyingTo!.id,
+            if (currentReplyTo != null) 'reply_to': currentReplyTo,
           };
 
           print('Sending message with attachment: ${json.encode(messageData)}');
@@ -695,13 +671,12 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                 color: Colors.white, size: 22),
           ),
           const SizedBox(width: 12),
-          // ✅ SỬA PHẦN NÀY - Hiển thị tên conversation động
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  widget.conversationName, // ✅ THAY ĐỔI Ở ĐÂY
+                  widget.conversationName,
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -876,6 +851,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
     }
   }
 
+  // ✅ SỬA: Tối ưu UI avatar để luôn thẳng hàng với dòng đầu tiên của tin nhắn
   Widget _buildMessageBubble(ChatMessage msg, bool isOwn, bool isLastInSequence) {
     final hasOnlyMedia = msg.content.isEmpty &&
         msg.attachments.isNotEmpty &&
@@ -901,10 +877,17 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               if (isOwn) _buildReplyButton(msg, isOwn),
-              if (!isOwn && isLastInSequence)
-                _buildAvatar(msg.senderId)
-              else if (!isOwn)
-                const SizedBox(width: 40),
+              // ✅ SỬA: Avatar luôn chiếm 48px (40 + 8 margin) để tin nhắn không bị lệch
+              if (!isOwn)
+                SizedBox(
+                  width: 48, // 40px avatar + 8px margin
+                  child: isLastInSequence
+                      ? Padding(
+                    padding: const EdgeInsets.only(top: 4, right: 8, bottom: 20),
+                    child: _buildAvatar(msg.senderId),
+                  )
+                      : null,
+                ),
               Flexible(
                 child: Column(
                   crossAxisAlignment: isOwn ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -1028,23 +1011,20 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
 
     return Tooltip(
       message: displayName,
-      child: Container(
-        margin: const EdgeInsets.only(left: 8, right: 8, bottom: 4),
-        child: avatarUrl != null
-            ? CircleAvatar(
-          radius: 16,
-          backgroundImage: CachedNetworkImageProvider(avatarUrl),
-        )
-            : CircleAvatar(
-          radius: 16,
-          backgroundColor: AppColors.primary5,
-          child: Text(
-            userId[0].toUpperCase(),
-            style: const TextStyle(
-              color: AppColors.primary2,
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
-            ),
+      child: avatarUrl != null
+          ? CircleAvatar(
+        radius: 16,
+        backgroundImage: CachedNetworkImageProvider(avatarUrl),
+      )
+          : CircleAvatar(
+        radius: 16,
+        backgroundColor: AppColors.primary5,
+        child: Text(
+          userId[0].toUpperCase(),
+          style: const TextStyle(
+            color: AppColors.primary2,
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
           ),
         ),
       ),
@@ -1058,7 +1038,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
       padding: EdgeInsets.only(
         left: isOwn ? 8 : 0,
         right: isOwn ? 0 : 8,
-        bottom: 4,
+        top: 4, // ✅ THÊM: padding top để thẳng hàng với tin nhắn
       ),
       child: IgnorePointer(
         ignoring: !isHovered,
@@ -1201,61 +1181,34 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
             alignment: Alignment.center,
             children: [
               Container(
-                width: 280,
                 height: 180,
-                color: Colors.grey[900],
-                child: const Icon(
-                  Icons.video_library_rounded,
-                  size: 64,
-                  color: Colors.white54,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.6),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.play_arrow_rounded,
-                  color: Colors.white,
-                  size: 32,
+                color: Colors.grey[300],
+                child: const Center(
+                  child: Icon(
+                    Icons.play_circle_outline,
+                    size: 64,
+                    color: AppColors.primary2,
+                  ),
                 ),
               ),
               Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
+                bottom: 8,
+                left: 8,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withOpacity(0.7),
-                      ],
-                    ),
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(4),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
-                        Icons.videocam_rounded,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          att['filename'] ?? 'Video',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      const Icon(Icons.videocam, size: 14, color: Colors.white),
+                      const SizedBox(width: 4),
+                      Text(
+                        att['filename'] ?? 'video',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
                         ),
                       ),
                     ],
@@ -1270,120 +1223,35 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
   }
 
   Widget _buildFileAttachment(Map<String, dynamic> att, bool isOwn) {
-    return GestureDetector(
-      onTap: () => _downloadFile(att),
-      child: Container(
-        margin: const EdgeInsets.only(top: 4),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: isOwn
-              ? Colors.white.withOpacity(0.2)
-              : AppColors.primary5.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isOwn
-                ? Colors.white.withOpacity(0.3)
-                : AppColors.primary5.withOpacity(0.5),
+    return Container(
+      margin: const EdgeInsets.only(top: 4),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: isOwn ? Colors.white.withOpacity(0.2) : AppColors.primary5.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.insert_drive_file_rounded,
+            size: 20,
+            color: isOwn ? Colors.white : AppColors.primary2,
           ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isOwn
-                    ? Colors.white.withOpacity(0.2)
-                    : AppColors.primary5.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(8),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              att['filename'] ?? 'file',
+              style: TextStyle(
+                color: isOwn ? Colors.white : Colors.black87,
+                fontSize: 12,
               ),
-              child: Icon(
-                _getFileIcon(att['mime']),
-                size: 20,
-                color: isOwn ? Colors.white : AppColors.primary2,
-              ),
+              overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(width: 12),
-            Flexible(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    att['filename'] ?? 'File',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isOwn ? Colors.white : Colors.black87,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _getFileMimeDisplay(att['mime']),
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: isOwn ? Colors.white70 : Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: isOwn
-                    ? Colors.white.withOpacity(0.2)
-                    : AppColors.primary2.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Icon(
-                Icons.download_rounded,
-                size: 16,
-                color: isOwn ? Colors.white : AppColors.primary2,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
-  }
-
-  Future<void> _downloadFile(Map<String, dynamic> att) async {
-    try {
-      final url = '${widget.apiBaseUrl}${att['url']}';
-      final filename = att['filename'] ?? 'download';
-
-      html.AnchorElement anchorElement = html.AnchorElement(href: url);
-      anchorElement.download = filename;
-      anchorElement.click();
-    } catch (e) {
-      print('Error downloading file: $e');
-    }
-  }
-
-  IconData _getFileIcon(String? mime) {
-    if (mime == null) return Icons.insert_drive_file;
-    if (mime.contains('pdf')) return Icons.picture_as_pdf;
-    if (mime.contains('word') || mime.contains('document')) {
-      return Icons.description;
-    }
-    if (mime.contains('excel') || mime.contains('spreadsheet')) {
-      return Icons.table_chart;
-    }
-    if (mime.contains('zip') || mime.contains('rar')) return Icons.folder_zip;
-    if (mime.contains('audio')) return Icons.audiotrack;
-    return Icons.insert_drive_file;
-  }
-
-  String _getFileMimeDisplay(String? mime) {
-    if (mime == null) return 'File';
-    if (mime.contains('pdf')) return 'PDF Document';
-    if (mime.contains('word')) return 'Word Document';
-    if (mime.contains('excel')) return 'Excel Spreadsheet';
-    if (mime.contains('zip')) return 'Archive';
-    if (mime.contains('audio')) return 'Audio File';
-    return mime.split('/').last.toUpperCase();
   }
 
   Widget _buildReplyIndicator(ChatMessage msg, bool isOwn) {
@@ -1392,75 +1260,58 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
       orElse: () => ChatMessage(
         id: '',
         conversationId: '',
-        senderId: 'Unknown',
-        content: 'Message not found',
+        senderId: '',
+        content: 'Tin nhắn không tồn tại',
         attachments: [],
         createdAt: '',
       ),
     );
 
-    return GestureDetector(
-      onTap: () {
-        if (_messageKeys.containsKey(msg.replyTo)) {
-          final context = _messageKeys[msg.replyTo]!.currentContext;
-          if (context != null) {
-            Scrollable.ensureVisible(
-              context,
-              duration: const Duration(milliseconds: 500),
-              curve: Curves.easeInOut,
-              alignment: 0.5,
-            );
-          }
-        }
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: isOwn
-              ? Colors.white.withOpacity(0.15)
-              : AppColors.primary5.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(10),
-          border: Border(
-            left: BorderSide(
-              color: isOwn ? Colors.white : AppColors.primary2,
-              width: 3,
-            ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: isOwn ? Colors.white.withOpacity(0.2) : AppColors.primary5.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(8),
+        border: Border(
+          left: BorderSide(
+            color: isOwn ? Colors.white : AppColors.primary2,
+            width: 3,
           ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.reply_rounded,
-                  size: 12,
-                  color: isOwn ? Colors.white70 : AppColors.primary2,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  _getUserDisplayName(replyMsg.senderId) ?? replyMsg.senderId,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: isOwn ? Colors.white : AppColors.primary2,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              replyMsg.content.isEmpty ? '📎 Attachment' : replyMsg.content,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                color: isOwn ? Colors.white70 : Colors.grey[700],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.reply_rounded,
+                size: 12,
+                color: isOwn ? Colors.white70 : AppColors.primary2,
               ),
+              const SizedBox(width: 4),
+              Text(
+                _getUserDisplayName(replyMsg.senderId) ?? replyMsg.senderId,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: isOwn ? Colors.white : AppColors.primary2,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            replyMsg.content.isEmpty ? '📎 Attachment' : replyMsg.content,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 12,
+              color: isOwn ? Colors.white70 : Colors.grey[700],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -1553,7 +1404,6 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
       ),
     );
   }
-
 
   String _formatTime(String timestamp) {
     try {

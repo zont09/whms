@@ -32,6 +32,7 @@ class ListScopeCubit extends Cubit<int> {
       scopeChild.clear();
       scopeParent.clear();
       listFull.clear();
+      listShow.clear();
     }
 
     ResponseModel response = await _scopeService.getListScope();
@@ -58,7 +59,7 @@ class ListScopeCubit extends Cubit<int> {
       }
       listFull.add(FullScopeEntry(model: p, list: tmp));
     }
-
+    listShow.clear();
     listShow.addAll(listFull);
     currentPage = 1;
     maxPage = (listShow.length / itemPerPage).ceil();

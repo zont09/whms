@@ -357,6 +357,7 @@ class WorkingService {
     }
 
     // 2. Kiểm tra thay đổi assignees (gắn/gỡ người)
+    debugPrint("[THINK] ====> check assignees: ${model.assignees} - ${oldModel.assignees}");
     if (model.assignees != oldModel.assignees) {
       // Tìm người được gắn mới
       final newAssignees = model.assignees
