@@ -14,11 +14,14 @@ class LoginInfoView extends StatelessWidget {
       child: Container(
         width: double.infinity,
         alignment: Alignment.center,
-        color: ColorConfig.primary4,
+        decoration: BoxDecoration(
+          gradient: ColorConfig.textGradient
+        ),
+        // color: ColorConfig.primary4,
         // padding: EdgeInsets.symmetric(
         //     horizontal: ScaleUtils.scaleSize(150, context)),
         child: Container(
-          width: ScaleUtils.scaleSize(591, context),
+          width: ScaleUtils.scaleSize(620, context),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -27,6 +30,7 @@ class LoginInfoView extends StatelessWidget {
                 children: [
                   Text(
                     AppText.titleLoginSlogan.text,
+                    textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: ScaleUtils.scaleSize(40, context),
                       fontWeight: FontWeight.w800,
@@ -62,7 +66,7 @@ class LoginInfoView extends StatelessWidget {
                     letterSpacing: ScaleUtils.scaleSize(-0.41, context),
                     color: ColorConfig.textPrimary,
                     fontFamily: 'Afacad'),
-                textAlign: TextAlign.center,
+                textAlign: TextAlign.justify,
               ),
               SizedBox(height: ScaleUtils.scaleSize(50, context)),
               // LogoCenterView(listLogo: listLogo)

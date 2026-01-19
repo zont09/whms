@@ -98,7 +98,7 @@ class LoginView extends StatelessWidget {
             //     height: ScaleUtils.scaleSize(250, context),
             //     width: ScaleUtils.scaleSize(300, context)),
             GradientText(text: 'ĐĂNG NHẬP',
-              fontSize: 44,
+              fontSize: ScaleUtils.scaleSize(44, context),
               fontWeight: FontWeight.w800,
               gradient: ColorConfig.textGradient),
             SizedBox(height: ScaleUtils.scaleSize(20, context)),

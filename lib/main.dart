@@ -37,18 +37,13 @@ void main() async {
   } catch (e) {
     print("===> bug: $e");
   }
-  // final workingUnit = await WorkingService.instance.getAllWorkingUnitIgnoreEnable();
-  // for(var work in workingUnit) {
-  //   await WorkingService.instance.updateWorkingUnit(work.copyWith(closed: false));
-  // }
-  // await giaiCuuFTF();
-  // await bangVang();
-  // await danhSachTamLongVang();
-  // await giaiCuuScopeSubtask();
-  // await danhSachTamLongKimCuong();
   setupDependencies();
   // runApp(MyApp());
-  runApp(MyApp());
+  runApp(
+    OrientationGuard(
+      child: MyApp(),
+    ),
+  );
 }
 
 final GoRouter mainRouter = GoRouter(
@@ -115,5 +110,41 @@ class MyApp extends StatelessWidget {
             );
           },
         ));
+  }
+}
+
+class OrientationGuard extends StatelessWidget {
+  final Widget child;
+
+  const OrientationGuard({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    final isPortrait = size.height > size.width;
+
+    if (isPortrait) {
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Icon(Icons.screen_rotation, size: 72),
+                SizedBox(height: 16),
+                Text(
+                  'Vui lòng xoay ngang màn hình để sử dụng ứng dụng',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 18),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return child;
   }
 }
